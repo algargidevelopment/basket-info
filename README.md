@@ -1,78 +1,45 @@
-# React + TypeScript + Vite
+# Basket Info
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Basket Info is a small web project designed to make basketball information easy to explore. The goal is to give users a simple place to check team details, game information, and basketball stats without needing a large, complicated dashboard.
 
-Currently, two official plugins are available:
+## What this project is about
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+This app is intended to help basketball fans and followers:
 
-## React Compiler
+- view team and player information
+- check schedules and game results
+- look up standings or rankings
+- compare stats between teams or players
+- quickly browse basketball-related content in one place
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+## Main purpose
 
-Note: This will impact Vite dev & build performances.
-You can also try [the experimental native React Compiler support in plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md#rust-react-compiler) by using `compiler: true` in the plugin options instead of using the Babel plugin.
+The project is centered around one idea: making basketball data more accessible and easier to understand. Instead of hunting through multiple sources, users can use a single web interface to find the information they care about.
 
-## Expanding the ESLint configuration
+## Typical features
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+Depending on how the app is built, you can expect features like:
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+- home page with basketball updates
+- team or league browsing
+- player profiles and stats
+- recent match results
+- standings table
+- responsive layout for desktop and mobile
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Stack
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+This project is likely a front-end web app using common web technologies such as HTML, CSS, and JavaScript (or a framework like React). The exact implementation can vary, but the focus is on creating a clean, readable basketball information experience.
 
-```
+## How to use it
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+1. Open the project in a browser.
+2. Navigate through the main sections.
+3. Explore team, match, or player information.
+4. Use the interface to find the basketball data you need.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Project goal
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Basket Info is a practical example of a content-focused sports website: easy to read, easy to navigate, and built around useful basketball information.
 
-```
+This README can be expanded later with installation steps, screenshots, API details, and project architecture as the app grows.
