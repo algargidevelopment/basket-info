@@ -1,0 +1,213 @@
+.site-header {
+  position: relative;
+  z-index: 10;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: var(--space-6);
+  min-height: 5rem;
+  width: 100%;
+  padding: 0 max(1rem, calc((100vw - 80rem) / 2));
+  border-bottom: 1px solid var(--color-border);
+  background: var(--color-surface);
+}
+
+.site-header__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-width: 0;
+  color: var(--color-navy);
+  text-decoration: none;
+}
+
+.site-header__brand-mark {
+  display: grid;
+  width: 2.5rem;
+  aspect-ratio: 1;
+  place-items: center;
+  border-radius: var(--radius-md);
+  background: var(--color-orange);
+  color: #fff;
+  font-family: var(--font-stats);
+  font-size: 0.875rem;
+  font-weight: 700;
+}
+
+.site-header__brand-name {
+  display: flex;
+  flex-direction: column;
+  font-family: var(--font-heading);
+  font-size: 1.125rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.site-header__brand-name span {
+  color: var(--color-orange);
+}
+
+.site-header__next-game {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding-left: var(--space-6);
+  border-left: 1px solid var(--color-border);
+}
+
+.site-header__next-game-label {
+  color: var(--color-text-muted);
+  font-family: var(--font-stats);
+  font-size: 0.625rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.site-header__next-game-info {
+  color: var(--color-navy);
+  font-family: var(--font-stats);
+  font-size: 0.8125rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.primary-nav {
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-start;
+  gap: var(--space-1);
+  align-self: stretch;
+  min-width: 0;
+}
+
+.primary-nav__link {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--space-3);
+  color: var(--color-text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.primary-nav__link:hover,
+.primary-nav__link--active {
+  color: var(--color-orange);
+}
+
+.primary-nav__link--active::after {
+  position: absolute;
+  right: var(--space-3);
+  bottom: 0;
+  left: var(--space-3);
+  height: 3px;
+  border-radius: var(--radius-pill) var(--radius-pill) 0 0;
+  background: var(--color-orange);
+  content: '';
+}
+
+.competition-switch {
+  display: inline-flex;
+  align-items: center;
+  justify-self: end;
+  gap: 2px;
+  padding: 3px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: #eef0f2;
+}
+
+.competition-switch__option {
+  min-height: 1.75rem;
+  padding: 0 0.75rem;
+  border: 0;
+  border-radius: var(--radius-pill);
+  background: transparent;
+  color: #6b5c55;
+  cursor: pointer;
+  font-family: var(--font-stats);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: background-color 160ms ease, color 160ms ease, box-shadow 160ms ease;
+}
+
+.competition-switch__option--active {
+  background: var(--color-surface);
+  color: var(--color-navy);
+  box-shadow: 0 1px 3px rgb(13 27 42 / 10%);
+}
+
+.competition-switch__option:not(.competition-switch__option--active):hover {
+  color: var(--color-navy);
+}
+
+@media (max-width: 1100px) {
+  .site-header {
+    grid-template-columns: auto 1fr auto;
+    gap: var(--space-4);
+  }
+
+  .site-header__next-game {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .site-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: var(--space-3);
+    min-height: auto;
+    padding: max(0.75rem, env(safe-area-inset-top)) 1rem 0;
+  }
+
+  .primary-nav {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    justify-content: safe center;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    min-height: 2.75rem;
+    margin-inline: -1rem;
+    padding-inline: 0.75rem;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+
+  .primary-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .primary-nav__link {
+    flex: 0 0 auto;
+    padding-inline: var(--space-2);
+    font-size: 0.75rem;
+    scroll-snap-align: center;
+  }
+
+  .primary-nav__link--active::after {
+    right: var(--space-2);
+    left: var(--space-2);
+  }
+
+  .competition-switch__option {
+    min-height: 1.625rem;
+    padding-inline: 0.625rem;
+    font-size: 0.625rem;
+  }
+}
+
+@media (max-width: 360px) {
+  .site-header__brand-name {
+    font-size: 1rem;
+  }
+
+  .competition-switch__option {
+    padding-inline: 0.5rem;
+  }
+}

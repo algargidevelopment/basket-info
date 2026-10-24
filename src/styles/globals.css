@@ -1,0 +1,114 @@
+@import url('https://fonts.googleapis.com/css2?family=Chivo:wght@400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+:root {
+  color-scheme: light;
+  font-family: var(--font-body);
+  color: var(--color-text);
+  background: var(--color-background);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  /* Brand colors */
+  --color-orange: #f35b04;
+  --color-orange-hover: #ff6600;
+  --color-orange-soft: #ffe5d0;
+  --color-navy: #0d1b2a;
+  --color-navy-soft: #1c2541;
+  --color-blue: #3a86ff;
+  --color-background: #f8f9fa;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f3f4f6;
+  --color-text: #191c1d;
+  --color-text-muted: #64748b;
+  --color-border: #e2e8f0;
+  --color-error: #ba1a1a;
+  --color-success: #16803c;
+
+  /* Typography */
+  --font-heading: 'Chivo', Arial, sans-serif;
+  --font-body: 'Chivo', Arial, sans-serif;
+  --font-stats: 'Space Grotesk', ui-monospace, monospace;
+  --text-score: 4rem;
+  --text-title-xl: 2.5rem;
+  --text-title-lg: 1.75rem;
+  --text-title-md: 1.375rem;
+  --text-body: 1rem;
+  --text-caption: 0.75rem;
+
+  /* Spacing and shape */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+  --radius-sm: 0.25rem;
+  --radius-md: 0.5rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+  --radius-pill: 9999px;
+
+  /* Elevation */
+  --shadow-card: 0 2px 8px -2px rgb(13 27 42 / 4%);
+  --shadow-card-hover: 0 8px 24px -4px rgb(13 27 42 / 8%);
+  --shadow-floating: 0 16px 36px -6px rgb(13 27 42 / 16%);
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  overflow-x: clip;
+  scroll-behavior: smooth;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  overflow-x: clip;
+  margin: 0;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a {
+  color: inherit;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--color-orange-soft);
+  outline-offset: 2px;
+}
+
+::selection {
+  color: #fff;
+  background: var(--color-orange);
+}
+
+@media (max-width: 767px) {
+  :root {
+    --text-score: 2.75rem;
+    --text-title-xl: 1.875rem;
+  }
+}
