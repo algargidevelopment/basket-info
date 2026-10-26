@@ -47,12 +47,13 @@
   --space-12: 3rem;
   --radius-sm: 0.25rem;
   --radius-md: 0.5rem;
+  --radius-card: 0.75rem;
   --radius-lg: 1rem;
   --radius-xl: 1.5rem;
   --radius-pill: 9999px;
 
   /* Elevation */
-  --shadow-card: 0 2px 8px -2px rgb(13 27 42 / 4%);
+  --shadow-card: 0 2px 6px -2px rgb(13 27 42 / 12%), 0 1px 2px rgb(13 27 42 / 6%);
   --shadow-card-hover: 0 8px 24px -4px rgb(13 27 42 / 8%);
   --shadow-floating: 0 16px 36px -6px rgb(13 27 42 / 16%);
 }

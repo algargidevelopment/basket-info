@@ -1,0 +1,238 @@
+.summary-standings {
+  display: flex;
+  width: 50%;
+  min-width: 0;
+  flex-direction: column;
+  gap: 1.1rem;
+  padding: 1.25rem;
+}
+
+.summary-standings__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.summary-standings__league,
+.summary-standings__playoffs {
+  font-family: var(--font-stats);
+  font-size: 0.58rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.summary-standings__league {
+  padding: 0.38rem 0.65rem;
+  border-radius: 0.3rem;
+  background: #d8e2ff;
+  color: var(--color-navy);
+}
+
+.summary-standings__playoffs {
+  color: #b94000;
+}
+
+.summary-standings__balance {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0.85rem 0.55rem;
+  border-radius: 0.75rem;
+  background: #f0f1f2;
+}
+
+.summary-standings__metric {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+}
+
+.summary-standings__label,
+.summary-standings__detail {
+  font-family: var(--font-stats);
+  font-size: 0.56rem;
+  letter-spacing: 0.03em;
+}
+
+.summary-standings__label {
+  color: #34465a;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.summary-standings__value {
+  margin-top: 0.18rem;
+  color: var(--color-navy);
+  font-family: var(--font-stats);
+  font-size: clamp(1.05rem, 2vw, 1.35rem);
+  font-weight: 700;
+  line-height: 1.15;
+  white-space: nowrap;
+}
+
+.summary-standings__value--orange,
+.summary-standings__detail--orange {
+  color: #b94000;
+}
+
+.summary-standings__detail {
+  color: #34465a;
+}
+
+.summary-standings__stats {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.summary-standings__stat-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.3rem;
+  font-size: 0.67rem;
+  font-weight: 600;
+}
+
+.summary-standings__stat-heading span {
+  min-width: 0;
+}
+
+.summary-standings__stat-heading strong {
+  color: #b94000;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.summary-standings__stat:nth-child(2) .summary-standings__stat-heading strong {
+  color: #34465a;
+}
+
+.summary-standings__track {
+  overflow: hidden;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: #e5e7eb;
+}
+
+.summary-standings__fill {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+}
+
+.summary-standings__fill--orange {
+  width: 82%;
+  background: #b94000;
+}
+
+.summary-standings__fill--slate {
+  width: 68%;
+  background: #526176;
+}
+
+.summary-standings__teams {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.summary-standings__team {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 1.85rem;
+  padding: 0 0.25rem;
+  border-bottom: 1px solid #edf0f2;
+  color: #34465a;
+  font-size: 0.68rem;
+}
+
+.summary-standings__team:last-child {
+  border-bottom: 0;
+}
+
+.summary-standings__position,
+.summary-standings__record {
+  font-family: var(--font-stats);
+  font-size: 0.62rem;
+}
+
+.summary-standings__team--current {
+  border-bottom-color: transparent;
+  border-radius: 0.45rem;
+  background: #fff4ef;
+  color: var(--color-navy);
+  font-weight: 700;
+}
+
+.summary-standings__team--current .summary-standings__position,
+.summary-standings__team--current .summary-standings__record {
+  color: #b94000;
+}
+
+.summary-standings__link {
+  display: flex;
+  min-height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  border-radius: 0.45rem;
+  background: #e7e8e9;
+  color: var(--color-navy);
+  font-family: var(--font-stats);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  text-transform: uppercase;
+  transition: background-color 160ms ease;
+}
+
+.summary-standings__link:hover {
+  background: #d9dcdf;
+}
+
+.summary-standings__link span {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+@media (max-width: 760px) {
+  .summary-standings {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .summary-standings {
+    gap: 0.9rem;
+    padding: 1rem;
+  }
+
+  .summary-standings__balance {
+    gap: 0.25rem;
+    padding-inline: 0.25rem;
+  }
+
+  .summary-standings__label,
+  .summary-standings__detail {
+    font-size: 0.48rem;
+  }
+
+  .summary-standings__value {
+    font-size: 1rem;
+  }
+
+  .summary-standings__stat-heading,
+  .summary-standings__team {
+    font-size: 0.6rem;
+  }
+}

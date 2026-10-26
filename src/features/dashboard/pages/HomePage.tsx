@@ -1,9 +1,17 @@
-import NextMatch from "../components/NextMatch";
-
+import LastMatch from "../components/lastMatch/LastMatch";
+import NextMatch from "../components/nextMatch/NextMatch";
+import SummaryStandings from "../components/summaryStandings/SummaryStandings";
+import './HomePage.css'
 
 
 export default function HomePage() {
   return (
-    <NextMatch />
+    <div className="home-page">
+        <NextMatch />
+        <div className="summaryLastMatch_section">
+          <LastMatch />
+          <SummaryStandings/>
+        </div>
+    </div>
   )
 }

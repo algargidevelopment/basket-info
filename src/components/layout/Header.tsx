@@ -7,10 +7,10 @@ export default function Header() {
 
   return (
     <header className="site-header">
-      <a className="site-header__brand" href="/" aria-label="Taronja Basket, inicio">
+      <NavLink className="site-header__brand" to="/" aria-label="Taronja Basket, inicio">
         <span className="site-header__brand-mark" aria-hidden="true">TB</span>
         <span className="site-header__brand-name">Taronja<span>Basket</span></span>
-      </a>
+      </NavLink>
 
       <div className="site-header__next-game" aria-label="Próximo partido">
         <span className="site-header__next-game-label">PRÓXIMO PARTIDO</span>
@@ -19,7 +19,7 @@ export default function Header() {
 
       <nav className="primary-nav" aria-label="Navegación principal">
 
-        <NavLink to="/" className={({ isActive }) =>`primary-nav__link ${isActive ? 'primary-nav__link--active' : ''}`}>Inicio</NavLink>
+        <NavLink to="/" end className={({ isActive }) =>`primary-nav__link ${isActive ? 'primary-nav__link--active' : ''}`}>Inicio</NavLink>
 
         <NavLink to="/partidos" className={({ isActive }) =>`primary-nav__link ${isActive ? 'primary-nav__link--active' : ''}`}>Partidos</NavLink>
 
