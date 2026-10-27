@@ -1,5 +1,6 @@
 
 import { useEffect, useMemo, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase, hasSupabaseConfig } from '../../../lib/supabase'
 import { useCompetition } from '../../../lib/useCompetition'
 import './PlayersPage.css'
@@ -170,11 +171,16 @@ export default function PlayersPage() {
 
   useEffect(() => {
     if (!selectedPlayer) return
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === 'Escape') setSelectedPlayer(null)
     }
     window.addEventListener('keydown', onKeyDown)
-    return () => window.removeEventListener('keydown', onKeyDown)
+    return () => {
+      document.body.style.overflow = previousOverflow
+      window.removeEventListener('keydown', onKeyDown)
+    }
   }, [selectedPlayer])
 
   const positions = useMemo(() => ['Todos', ...new Set(players.map((player) => player.position).filter((value): value is string => Boolean(value)))], [players])
@@ -265,7 +271,7 @@ export default function PlayersPage() {
 
       <footer className="roster-footer"><span>ESTADÍSTICAS · {competition}</span><p>Los promedios corresponden a partidos finalizados de {competition} en la temporada 2026/27. Selecciona un jugador para ver su ficha.</p></footer>
 
-      {selectedPlayer && selectedTotals && (
+      {selectedPlayer && selectedTotals && createPortal((
         <div className="player-dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setSelectedPlayer(null) }}>
           <section className="player-dialog" role="dialog" aria-modal="true" aria-labelledby="player-dialog-name">
             <button className="player-dialog__close" type="button" aria-label="Cerrar ficha" onClick={() => setSelectedPlayer(null)}>×</button>
@@ -304,7 +310,7 @@ export default function PlayersPage() {
             </div>
           </section>
         </div>
-      )}
+      ), document.body)}
     </section>
   )
 }

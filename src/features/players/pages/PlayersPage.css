@@ -180,7 +180,7 @@
   .roster-footer { flex-direction: column; }
   .roster-footer p { text-align: left; }
   .player-dialog-backdrop { align-items: center; padding: 0.75rem; }
-  .player-dialog { width: 100%; max-height: 86vh; max-height: 86svh; border-radius: 1rem; }
+  .player-dialog { width: min(100%, 27rem); max-height: 86vh; max-height: 86svh; border-radius: 1rem; }
   .player-dialog__hero { min-height: 9rem; padding: 1rem 1.2rem; }
   .player-dialog__identity { max-width: 76%; }
   .player-dialog__identity h2 { margin-top: 0.45rem; font-size: clamp(1.45rem, 6vw, 2rem); }
