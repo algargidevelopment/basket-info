@@ -6,6 +6,11 @@ import { useCompetition } from '../../../lib/useCompetition'
 import './PlayersPage.css'
 
 const SEASON = '2026-27'
+const localPlayerPhotos = import.meta.glob<string>('../../../assets/players/*.{avif,jpg,jpeg,png,webp}', {
+  eager: true,
+  import: 'default',
+  query: '?url',
+})
 
 type Player = {
   id: string
@@ -83,6 +88,16 @@ function playerInitials(name: string) {
   return name.split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase()
 }
 
+function playerPhotoSlug(name: string) {
+  return name.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+}
+
+function playerPhoto(player: Player) {
+  const slug = playerPhotoSlug(player.name)
+  const localEntry = Object.entries(localPlayerPhotos).find(([path]) => path.split('/').pop()?.replace(/\.[^.]+$/, '') === slug)
+  return localEntry?.[1] ?? player.photo_url
+}
+
 export default function PlayersPage() {
   const { competition } = useCompetition()
   const [players, setPlayers] = useState<Player[]>([])
@@ -148,7 +163,8 @@ export default function PlayersPage() {
           player.threeAttempted += row.three_points_attempted || 0
           player.freeMade += row.free_throws_made || 0
           player.freeAttempted += row.free_throws_attempted || 0
-          player.rebounds += row.rebounds ?? ((row.offensive_rebounds || 0) + (row.defensive_rebounds || 0))
+          const splitRebounds = (row.offensive_rebounds || 0) + (row.defensive_rebounds || 0)
+          player.rebounds += splitRebounds || row.rebounds || 0
           player.assists += row.assists || 0
           player.steals += row.steals || 0
           player.blocks += row.blocks || 0
@@ -191,6 +207,7 @@ export default function PlayersPage() {
   }), [players, position, search])
 
   const selectedTotals = selectedPlayer ? totals[selectedPlayer.id] ?? emptyTotals() : null
+  const selectedPhoto = selectedPlayer ? playerPhoto(selectedPlayer) : null
 
   return (
     <section className="roster-page">
@@ -239,11 +256,13 @@ export default function PlayersPage() {
           {visiblePlayers.map((player, index) => {
             const stats = totals[player.id] ?? emptyTotals()
             const age = ageOnToday(player.birth_date)
+            const photo = playerPhoto(player)
             return (
               <button className="player-card" key={player.id} type="button" onClick={() => setSelectedPlayer(player)} style={{ animationDelay: `${index * 45}ms` }}>
                 <span className="player-card__topline"><span>VALENCIA BASKET</span><span>#{player.shirt_number ?? '—'}</span></span>
                 <span className="player-card__portrait">
-                  {player.photo_url ? <img src={player.photo_url} alt="" loading="lazy" /> : <span className="player-card__initials">{playerInitials(player.name)}</span>}
+                  <span className="player-card__initials">{playerInitials(player.name)}</span>
+                  {photo && <img src={photo} alt="" loading="lazy" onError={(event) => { event.currentTarget.style.display = 'none' }} />}
                   <span className="player-card__portrait-number">{String(player.shirt_number ?? '').padStart(2, '0')}</span>
                   <span className="player-card__portrait-ball" aria-hidden="true">🏀</span>
                 </span>
@@ -277,7 +296,8 @@ export default function PlayersPage() {
             <button className="player-dialog__close" type="button" aria-label="Cerrar ficha" onClick={() => setSelectedPlayer(null)}>×</button>
             <div className="player-dialog__hero">
               <span className="player-dialog__jersey">{String(selectedPlayer.shirt_number ?? '—').padStart(2, '0')}</span>
-              {selectedPlayer.photo_url ? <img src={selectedPlayer.photo_url} alt={selectedPlayer.name} /> : <span className="player-dialog__initials">{playerInitials(selectedPlayer.name)}</span>}
+              <span className="player-dialog__initials">{playerInitials(selectedPlayer.name)}</span>
+              {selectedPhoto && <img src={selectedPhoto} alt={selectedPlayer.name} onError={(event) => { event.currentTarget.style.display = 'none' }} />}
               <div className="player-dialog__identity">
                 <span className="roster-kicker">{selectedPlayer.position || 'JUGADOR'} · VALENCIA BASKET</span>
                 <h2 id="player-dialog-name">{selectedPlayer.name}</h2>

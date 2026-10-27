@@ -95,6 +95,7 @@ create table public.game_player_stats (
   free_throws_attempted smallint not null default 0,
   offensive_rebounds smallint not null default 0,
   defensive_rebounds smallint not null default 0,
+  rebounds smallint,
   assists smallint not null default 0,
   steals smallint not null default 0,
   blocks smallint not null default 0,
@@ -106,7 +107,7 @@ create table public.game_player_stats (
     two_points_made >= 0 and two_points_attempted >= 0 and two_points_made <= two_points_attempted and
     three_points_made >= 0 and three_points_attempted >= 0 and three_points_made <= three_points_attempted and
     free_throws_made >= 0 and free_throws_attempted >= 0 and free_throws_made <= free_throws_attempted and
-    offensive_rebounds >= 0 and defensive_rebounds >= 0 and assists >= 0 and steals >= 0 and
+    offensive_rebounds >= 0 and defensive_rebounds >= 0 and (rebounds is null or rebounds >= 0) and assists >= 0 and steals >= 0 and
     blocks >= 0 and turnovers >= 0 and fouls >= 0
   )
 );

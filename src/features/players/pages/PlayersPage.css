@@ -90,8 +90,8 @@
 .player-card__topline span:last-child { color: var(--roster-orange); font-size: 0.7rem; }
 .player-card__portrait { position: relative; display: grid; height: clamp(10rem, 19vw, 14rem); place-items: center; overflow: hidden; margin: 0.7rem -0.8rem 0; background: radial-gradient(ellipse at 50% 78%, rgb(243 91 4 / 14%), transparent 43%), linear-gradient(145deg, #f5f6f7, #eceff2); }
 .player-card__portrait::before { position: absolute; top: 14%; left: 50%; width: 11rem; aspect-ratio: 1; border: 1px solid rgb(13 27 42 / 6%); border-radius: 50%; content: ''; transform: translateX(-50%); }
-.player-card__portrait img { position: absolute; z-index: 1; width: 100%; height: 100%; object-fit: cover; object-position: center 25%; transition: transform 400ms cubic-bezier(.2,.8,.2,1); }
-.player-card:hover .player-card__portrait img { transform: scale(1.045); }
+.player-card__portrait img { position: absolute; z-index: 1; bottom: 0; left: 50%; width: auto; max-width: 100%; height: 94%; object-fit: contain; object-position: center bottom; transform: translateX(-50%); transition: height 400ms cubic-bezier(.2,.8,.2,1); }
+.player-card:hover .player-card__portrait img { height: 97%; }
 .player-card__initials { z-index: 1; display: grid; width: 6rem; aspect-ratio: 1; place-items: center; border: 1px solid rgb(243 91 4 / 17%); border-radius: 50%; background: linear-gradient(145deg, #fff, #ffe8d9); color: var(--roster-orange); font-family: var(--font-heading); font-size: 1.8rem; font-weight: 800; letter-spacing: -0.07em; }
 .player-card__portrait-number { position: absolute; right: 0.6rem; bottom: -0.3rem; color: rgb(13 27 42 / 7%); font-family: var(--font-stats); font-size: 6.7rem; font-weight: 700; letter-spacing: -0.1em; line-height: 1; }
 .player-card__portrait-ball { position: absolute; z-index: 2; top: 0.7rem; right: 0.7rem; display: grid; width: 2rem; aspect-ratio: 1; place-items: center; border: 1px solid rgb(255 255 255 / 70%); border-radius: 50%; background: rgb(255 255 255 / 75%); font-size: 0.8rem; opacity: 0; transform: translateY(4px) rotate(-14deg); transition: opacity 180ms ease, transform 220ms ease; }

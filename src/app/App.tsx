@@ -9,6 +9,7 @@ import PlayersPage from '../features/players/pages/PlayersPage'
 import StandingsPage from '../features/standings/pages/StandingsPage'
 import TeamStatsPage from '../features/team-stats/pages/TeamStatsPage'
 import { CompetitionProvider } from '../lib/CompetitionProvider'
+import ManagementPage from '../features/management/pages/ManagementPage'
 
 
 
@@ -26,6 +27,7 @@ function App() {
           <Route path="/plantilla" element={<PlayersPage />} />
           <Route path="/clasificacion" element={<StandingsPage />} />
           <Route path="/estadisticas" element={<TeamStatsPage />} />
+          <Route path="/gestion" element={<ManagementPage />} />
         </Routes>
         </main>
         
