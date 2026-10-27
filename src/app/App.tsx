@@ -8,6 +8,7 @@ import HomePage from '../features/dashboard/pages/HomePage'
 import PlayersPage from '../features/players/pages/PlayersPage'
 import StandingsPage from '../features/standings/pages/StandingsPage'
 import TeamStatsPage from '../features/team-stats/pages/TeamStatsPage'
+import { CompetitionProvider } from '../lib/CompetitionProvider'
 
 
 
@@ -15,7 +16,7 @@ function App() {
 //const [count, setCount] = useState(0)
 
   return (
-    <>
+    <CompetitionProvider>
       <div className="app-shell">
         <Header />
         <main className="app-main">
@@ -29,7 +30,7 @@ function App() {
         </main>
         
       </div>
-    </>
+    </CompetitionProvider>
   )
 }
 

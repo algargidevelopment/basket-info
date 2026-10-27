@@ -1,9 +1,9 @@
-import { useState } from 'react'
 import './Header.css'
 import { NavLink } from 'react-router'
+import { useCompetition } from '../../lib/useCompetition'
 
 export default function Header() {
-  const [competition, setCompetition] = useState('acb')
+  const { competition, setCompetition } = useCompetition()
 
   return (
     <header className="site-header">
@@ -33,18 +33,18 @@ export default function Header() {
 
       <div className="competition-switch" role="group" aria-label="Seleccionar competición">
         <button
-          className={`competition-switch__option ${competition === 'acb' ? 'competition-switch__option--active' : ''}`}
+          className={`competition-switch__option ${competition === 'ACB' ? 'competition-switch__option--active' : ''}`}
           type="button"
-          aria-pressed={competition === 'acb'}
-          onClick={() => setCompetition('acb')}
+          aria-pressed={competition === 'ACB'}
+          onClick={() => setCompetition('ACB')}
         >
           ACB
         </button>
         <button
-          className={`competition-switch__option ${competition === 'euroleague' ? 'competition-switch__option--active' : ''}`}
+          className={`competition-switch__option ${competition === 'EuroLeague' ? 'competition-switch__option--active' : ''}`}
           type="button"
-          aria-pressed={competition === 'euroleague'}
-          onClick={() => setCompetition('euroleague')}
+          aria-pressed={competition === 'EuroLeague'}
+          onClick={() => setCompetition('EuroLeague')}
         >
           EUROLIGA
         </button>
