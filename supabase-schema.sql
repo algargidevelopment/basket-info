@@ -11,7 +11,8 @@ create table public.teams (
   id uuid primary key default gen_random_uuid(),
   name text not null unique,
   short_name text,
-  logo_url text
+  logo_url text,
+  location text
 );
 
 -- Esta tabla se usa únicamente para jugadores de Valencia Basket.
@@ -40,11 +41,25 @@ create table public.games (
   status text not null default 'scheduled',
   home_score smallint,
   away_score smallint,
+  home_q1_score smallint,
+  away_q1_score smallint,
+  home_q2_score smallint,
+  away_q2_score smallint,
+  home_q3_score smallint,
+  away_q3_score smallint,
+  home_q4_score smallint,
+  away_q4_score smallint,
   constraint games_different_teams check (home_team_id <> away_team_id),
   constraint games_status_valid check (status in ('scheduled', 'live', 'finished')),
   constraint games_scores_nonnegative check (
     (home_score is null or home_score >= 0) and
     (away_score is null or away_score >= 0)
+  ),
+  constraint games_quarter_scores_nonnegative check (
+    (home_q1_score is null or home_q1_score >= 0) and (away_q1_score is null or away_q1_score >= 0) and
+    (home_q2_score is null or home_q2_score >= 0) and (away_q2_score is null or away_q2_score >= 0) and
+    (home_q3_score is null or home_q3_score >= 0) and (away_q3_score is null or away_q3_score >= 0) and
+    (home_q4_score is null or home_q4_score >= 0) and (away_q4_score is null or away_q4_score >= 0)
   ),
   constraint games_finished_have_scores check (
     status <> 'finished' or (home_score is not null and away_score is not null)

@@ -217,11 +217,7 @@ export default function PlayersPage() {
           <h1>El equipo <span>taronja.</span></h1>
           <p>Conoce a los jugadores que defienden nuestros colores esta temporada.</p>
         </div>
-        <div className="roster-hero__visual" aria-hidden="true">
-          <span className="roster-hero__number">{String(players.length || 16).padStart(2, '0')}</span>
-          <span className="roster-hero__caption">JUGADORES<br />PRIMER EQUIPO</span>
-          <span className="roster-hero__ball">🏀</span>
-        </div>
+        
         <div className="roster-hero__season">VALENCIA<br />BASKET <span>·</span> 26/27</div>
       </div>
 

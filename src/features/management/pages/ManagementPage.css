@@ -51,6 +51,11 @@
 .mg-score-inputs { display: grid; grid-template-columns: 1fr auto 1fr; align-items: end; gap: 0.35rem; }
 .mg-score-inputs label { display: flex; flex-direction: column; gap: 0.38rem; color: #637083; font-size: 0.68rem; font-weight: 700; }
 .mg-score-inputs > span { padding-bottom: 0.72rem; color: #8994a1; font-family: var(--font-stats); font-size: 0.75rem; }
+.mg-quarter-inputs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 0.55rem; min-width: 0; margin: 0; padding: 0.75rem; border: 1px solid #e3e8ed; border-radius: 0.65rem; }
+.mg-quarter-inputs legend { padding: 0 0.35rem; color: #637083; font-size: 0.66rem; font-weight: 700; }
+.mg-quarter-inputs > div { display: grid; grid-template-columns: 1fr; gap: 0.3rem; min-width: 0; }
+.mg-quarter-inputs > div > span { color: #8792a0; font-family: var(--font-stats); font-size: 0.6rem; font-weight: 700; text-align: center; }
+.mg-quarter-inputs input { min-height: 2.25rem !important; padding-inline: 0.35rem !important; text-align: center; }
 .mg-form .mg-button { margin-top: 0.15rem; }
 .mg-hint { margin: 0.9rem 0 0; color: #9aa3ad; font-size: 0.62rem; line-height: 1.5; }
 .mg-close-form { display: grid; width: 1.8rem; aspect-ratio: 1; place-items: center; border: 1px solid #e4e9ed; border-radius: 50%; background: #fff; color: #718092; cursor: pointer; font-size: 1.1rem; }
