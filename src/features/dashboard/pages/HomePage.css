@@ -11,5 +11,7 @@
   flex-direction:row;
   justify-content:space-between;
   gap: var(--space-6);
-  
+  @media (max-width: 768px) {
+    flex-direction: column;
+  }
 }
