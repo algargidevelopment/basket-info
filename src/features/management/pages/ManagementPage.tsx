@@ -8,6 +8,7 @@ const SEASON = '2026-27'
 
 type Team = { id: string; name: string; short_name: string | null; location: string | null }
 type Player = { id: string; name: string; shirt_number: number | null; active: boolean }
+type Standing = { team_id: string; position: number; played: number; wins: number; losses: number; points_for: number; points_against: number }
 type Game = {
   id: string
   competition_id: string
@@ -33,6 +34,8 @@ type PlayerStats = {
   game_id: string
   player_id: string
   minutes: number | string
+  minutes_seconds?: number | null
+  plus_minus: number
   points: number
   rebounds: number | null
   offensive_rebounds: number
@@ -67,7 +70,7 @@ type GameDraft = {
   home_q4_score: string
   away_q4_score: string
 }
-type StatsDraft = Omit<PlayerStats, 'game_id' | 'player_id'>
+type StatsDraft = Omit<PlayerStats, 'game_id' | 'player_id' | 'minutes'> & { minutes: string }
 
 const blankGame: GameDraft = {
   round: '', game_date: '', home_team_id: '', away_team_id: '', venue: '',
@@ -76,7 +79,7 @@ const blankGame: GameDraft = {
   home_q3_score: '', away_q3_score: '', home_q4_score: '', away_q4_score: '',
 }
 const blankStats: StatsDraft = {
-  minutes: 0, points: 0, rebounds: null, offensive_rebounds: 0, defensive_rebounds: 0,
+  minutes: '00:00', minutes_seconds: 0, plus_minus: 0, points: 0, rebounds: null, offensive_rebounds: 0, defensive_rebounds: 0,
   two_points_made: 0, two_points_attempted: 0, three_points_made: 0,
   three_points_attempted: 0, free_throws_made: 0, free_throws_attempted: 0,
   assists: 0, steals: 0, blocks: 0, turnovers: 0, fouls: 0,
@@ -90,6 +93,33 @@ function localDateTime(value: string) {
 
 function numeric(value: string) {
   return value.trim() === '' ? null : Number(value)
+}
+
+function parseMinutes(value: string) {
+  const match = /^(\d{1,3}):([0-5]\d)$/.exec(value.trim())
+  if (!match) return null
+  return Number(match[1]) * 60 + Number(match[2])
+}
+
+function formatMinutes(seconds: number) {
+  const safeSeconds = Math.max(0, Math.floor(seconds || 0))
+  return `${String(Math.floor(safeSeconds / 60)).padStart(2, '0')}:${String(safeSeconds % 60).padStart(2, '0')}`
+}
+
+function playerMinutesSeconds(row: PlayerStats) {
+  return row.minutes_seconds ?? Math.round(Number(row.minutes) * 60)
+}
+
+function quarterTotal(draft: GameDraft, side: 'home' | 'away') {
+  const keys = ([1, 2, 3, 4] as const).map((quarter) => `${side}_q${quarter}_score` as keyof GameDraft)
+  const values = keys.map((key) => draft[key])
+  return values.some((value) => value.trim() !== '')
+    ? values.reduce((sum, value) => sum + (Number(value) || 0), 0)
+    : numeric(draft[`${side}_score` as keyof GameDraft] as string)
+}
+
+function hasQuarterScore(draft: GameDraft, side: 'home' | 'away') {
+  return ([1, 2, 3, 4] as const).some((quarter) => draft[`${side}_q${quarter}_score` as keyof GameDraft].trim() !== '')
 }
 
 function pointsFromStats(stats: StatsDraft) {
@@ -118,12 +148,14 @@ export default function ManagementPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [teams, setTeams] = useState<Team[]>([])
+  const [competitionTeamIds, setCompetitionTeamIds] = useState<string[]>([])
   const [players, setPlayers] = useState<Player[]>([])
   const [games, setGames] = useState<Game[]>([])
   const [selectedGameId, setSelectedGameId] = useState('')
   const [playerStats, setPlayerStats] = useState<PlayerStats[]>([])
   const [statsLoading, setStatsLoading] = useState(false)
-  const [pane, setPane] = useState<'games' | 'stats'>('games')
+  const [pane, setPane] = useState<'games' | 'stats' | 'standings'>('games')
+  const [standings, setStandings] = useState<Standing[]>([])
   const [gameDraft, setGameDraft] = useState<GameDraft>(blankGame)
   const [editingGameId, setEditingGameId] = useState('')
   const [playerId, setPlayerId] = useState('')
@@ -191,17 +223,30 @@ export default function ManagementPage() {
         if (!cancelled) { setError(teamsResult.error?.message ?? playersResult.error?.message ?? 'No se pudieron cargar equipos y jugadores.'); setBusy(false) }
         return
       }
+      const { data: competitionTeamRows } = await supabase!
+        .from('competition_teams').select('team_id').eq('competition_id', competitionResult.data.id)
       const { data: gameRows, error: gamesError } = await supabase!
         .from('games')
         .select('id,competition_id,season,round,game_date,home_team_id,away_team_id,venue,status,home_score,away_score,home_q1_score,away_q1_score,home_q2_score,away_q2_score,home_q3_score,away_q3_score,home_q4_score,away_q4_score')
         .eq('competition_id', competitionResult.data.id)
         .eq('season', SEASON)
         .order('game_date', { ascending: false })
+      const { data: standingRows, error: standingsError } = await supabase!
+        .from('competition_standings').select('team_id,position,played,wins,losses,points_for,points_against')
+        .eq('competition_id', competitionResult.data.id).eq('season', SEASON).order('position')
+      const participantIds = new Set<string>((competitionTeamRows ?? []).map((row) => row.team_id as string))
+      if (participantIds.size === 0) {
+        // Older databases have no competition_teams relation; use clubs in this competition's schedule.
+        for (const game of gameRows ?? []) { participantIds.add(game.home_team_id); participantIds.add(game.away_team_id) }
+      }
       if (!cancelled) {
         setTeams((teamsResult.data ?? []) as Team[])
+        setCompetitionTeamIds([...participantIds])
         setPlayers((playersResult.data ?? []) as Player[])
         setGames((gameRows ?? []) as Game[])
+        setStandings((standingRows ?? []) as Standing[])
         if (gamesError) setError(gamesError.message)
+        if (standingsError) setError(standingsError.message)
         setBusy(false)
       }
     }
@@ -224,11 +269,40 @@ export default function ManagementPage() {
   const teamById = useMemo(() => new Map(teams.map((team) => [team.id, team.name])), [teams])
   const selectedGame = games.find((game) => game.id === selectedGameId) ?? null
   const orderedGames = useMemo(() => [...games].sort((a, b) => a.game_date.localeCompare(b.game_date)), [games])
-  const competitionTeams = teams
+  const competitionTeams = useMemo(() => teams.filter((team) => competitionTeamIds.includes(team.id)), [teams, competitionTeamIds])
+  const standingByTeam = useMemo(() => new Map(standings.map((row) => [row.team_id, row])), [standings])
+  const rankedStandings = useMemo(() => competitionTeams.map((team, index) => standingByTeam.get(team.id) ?? {
+    team_id: team.id, position: index + 1, played: 0, wins: 0, losses: 0, points_for: 0, points_against: 0,
+  }).sort((a, b) => {
+    const aPct = a.played > 0 ? a.wins / a.played : 0
+    const bPct = b.played > 0 ? b.wins / b.played : 0
+    return bPct - aPct || b.wins - a.wins || a.losses - b.losses ||
+      (b.points_for - b.points_against) - (a.points_for - a.points_against) ||
+      b.points_for - a.points_for || (teams.find((team) => team.id === a.team_id)?.name ?? '').localeCompare(teams.find((team) => team.id === b.team_id)?.name ?? '')
+  }).map((row, index) => ({ ...row, position: index + 1 })), [competitionTeams, standingByTeam, teams])
   const availablePlayers = useMemo(
     () => players.filter((player) => player.id === editingStatsPlayerId || !playerStats.some((row) => row.player_id === player.id)),
     [players, playerStats, editingStatsPlayerId],
   )
+
+  function updateStanding(teamId: string, key: keyof Omit<Standing, 'team_id'>, value: string) {
+    const fallback: Standing = { team_id: teamId, position: competitionTeams.findIndex((team) => team.id === teamId) + 1, played: 0, wins: 0, losses: 0, points_for: 0, points_against: 0 }
+    const current = standingByTeam.get(teamId) ?? fallback
+    setStandings((rows) => [...rows.filter((row) => row.team_id !== teamId), { ...current, [key]: Number(value) || 0 }].sort((a, b) => a.position - b.position))
+  }
+
+  async function saveStandings(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault()
+    if (!supabase) return
+    setBusy(true); setError(''); setNotice('')
+    const { data: comp, error: compError } = await supabase.from('competitions').select('id').eq('name', competition).maybeSingle()
+    if (compError || !comp) { setError(compError?.message ?? `No existe ${competition}.`); setBusy(false); return }
+    const rows = rankedStandings.map((row) => ({ competition_id: comp.id, season: SEASON, ...row }))
+    const { error: saveError } = await supabase.from('competition_standings').upsert(rows, { onConflict: 'competition_id,season,team_id' })
+    if (saveError) setError(saveError.message)
+    else setNotice('Clasificación guardada.')
+    setBusy(false)
+  }
 
   async function signIn(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
@@ -273,6 +347,15 @@ export default function ManagementPage() {
     setError('')
   }
 
+  function updateQuarterScore(quarter: 1 | 2 | 3 | 4, side: 'home' | 'away', value: string) {
+    const key = `${side}_q${quarter}_score` as keyof GameDraft
+    const next = { ...gameDraft, [key]: value }
+    const total = hasQuarterScore(next, side) ? String(quarterTotal(next, side) ?? 0) : ''
+    if (side === 'home') next.home_score = total
+    else next.away_score = total
+    setGameDraft(next)
+  }
+
   async function saveGame(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     if (!supabase) return
@@ -288,8 +371,8 @@ export default function ManagementPage() {
       away_team_id: gameDraft.away_team_id,
       venue: gameDraft.venue.trim() || null,
       status: gameDraft.status,
-      home_score: numeric(gameDraft.home_score),
-      away_score: numeric(gameDraft.away_score),
+      home_score: quarterTotal(gameDraft, 'home'),
+      away_score: quarterTotal(gameDraft, 'away'),
       home_q1_score: numeric(gameDraft.home_q1_score), away_q1_score: numeric(gameDraft.away_q1_score),
       home_q2_score: numeric(gameDraft.home_q2_score), away_q2_score: numeric(gameDraft.away_q2_score),
       home_q3_score: numeric(gameDraft.home_q3_score), away_q3_score: numeric(gameDraft.away_q3_score),
@@ -340,7 +423,7 @@ export default function ManagementPage() {
   function startStatsEdit(row: PlayerStats) {
     setPlayerId(row.player_id)
     setEditingStatsPlayerId(row.player_id)
-    setStatsDraft({ ...row })
+    setStatsDraft({ ...row, minutes: formatMinutes(playerMinutesSeconds(row)), minutes_seconds: playerMinutesSeconds(row), plus_minus: row.plus_minus ?? 0 })
     setError('')
     setNotice('')
   }
@@ -358,11 +441,18 @@ export default function ManagementPage() {
       setError('Este jugador ya tiene estadísticas en este partido. Selecciona otra persona o edita su fila existente.')
       return
     }
+    const minutesSeconds = parseMinutes(statsDraft.minutes)
+    if (minutesSeconds === null) {
+      setError('Introduce los minutos en formato mm:ss, por ejemplo 12:43.')
+      return
+    }
     setBusy(true)
     setError('')
     setNotice('')
     const record = {
-      minutes: Number(statsDraft.minutes) || 0,
+      minutes: Number((minutesSeconds / 60).toFixed(1)),
+      minutes_seconds: minutesSeconds,
+      plus_minus: Number(statsDraft.plus_minus) || 0,
       points: pointsFromStats(statsDraft),
       rebounds: reboundsFromDraft(statsDraft),
       offensive_rebounds: Number(statsDraft.offensive_rebounds) || 0,
@@ -438,6 +528,7 @@ export default function ManagementPage() {
           <div className="mg-tabs" role="tablist" aria-label="Secciones de gestión">
             <button type="button" role="tab" aria-selected={pane === 'games'} className={pane === 'games' ? 'is-active' : ''} onClick={() => setPane('games')}>Partidos <span>{games.length}</span></button>
             <button type="button" role="tab" aria-selected={pane === 'stats'} className={pane === 'stats' ? 'is-active' : ''} onClick={() => setPane('stats')}>Estadísticas de jugadores</button>
+            <button type="button" role="tab" aria-selected={pane === 'standings'} className={pane === 'standings' ? 'is-active' : ''} onClick={() => setPane('standings')}>Clasificación</button>
           </div>
           <span className="mg-season-pill">{competition} <i /> {SEASON}</span>
         </div>
@@ -445,7 +536,15 @@ export default function ManagementPage() {
         {notice && <div className="mg-notice mg-notice--success" role="status">{notice}</div>}
         {error && <div className="mg-notice mg-notice--error" role="alert">{error}</div>}
 
-        {pane === 'games' ? (
+        {pane === 'standings' ? (
+          <form className="mg-card" onSubmit={(event) => void saveStandings(event)}>
+            <div className="mg-card-heading"><div><span className="mg-eyebrow">CLASIFICACIÓN OFICIAL</span><h2>Clasificación {competition}</h2></div><button className="mg-button mg-button--primary" type="submit" disabled={busy || !competitionTeams.length}>{busy ? 'Guardando…' : 'Guardar clasificación'}</button></div>
+            <p className="mg-hint">Actualiza partidos, victorias y derrotas; la clasificación se ordena automáticamente por porcentaje de victorias, diferencial y puntos.</p>
+            <div className="mg-standings-editor"><div className="mg-standings-head"><span>Equipo</span><span>Puesto</span><span>PJ</span><span>V</span><span>D</span><span>PF</span><span>PC</span></div>
+              {rankedStandings.map((row) => { const team = teams.find((candidate) => candidate.id === row.team_id)!; return <div className="mg-standing-row" key={team.id}><b>{team.name}</b><strong className="mg-standing-position">{row.position}</strong>{(['played', 'wins', 'losses', 'points_for', 'points_against'] as const).map((key) => <label key={key}><span>{key === 'played' ? 'PJ' : key === 'wins' ? 'V' : key === 'losses' ? 'D' : key === 'points_for' ? 'PF' : 'PC'}</span><input aria-label={`${team.name}: ${key}`} type="number" min="0" value={row[key]} onChange={(event) => updateStanding(team.id, key, event.target.value)} /></label>)}</div> })}
+            </div>
+          </form>
+        ) : pane === 'games' ? (
           <div className="mg-layout">
             <section className="mg-card mg-games-card">
               <div className="mg-card-heading"><div><span className="mg-eyebrow">CALENDARIO Y RESULTADOS</span><h2>Partidos {competition}</h2></div><button className="mg-button mg-button--primary" type="button" onClick={newGame}>＋ Añadir partido</button></div>
@@ -474,8 +573,9 @@ export default function ManagementPage() {
                 <label>Equipo visitante<select required value={gameDraft.away_team_id} onChange={(event) => setGameDraft({ ...gameDraft, away_team_id: event.target.value })}><option value="">Seleccionar equipo</option>{competitionTeams.map((team) => <option key={team.id} value={team.id}>{team.name}</option>)}</select></label>
                 <label className="mg-form-wide">Estadio / pabellón<input value={gameDraft.venue} onChange={(event) => setGameDraft({ ...gameDraft, venue: event.target.value })} placeholder="Nombre del pabellón" /></label>
                 <label>Estado<select value={gameDraft.status} onChange={(event) => setGameDraft({ ...gameDraft, status: event.target.value as Game['status'] })}><option value="scheduled">Pendiente</option><option value="live">En juego</option><option value="finished">Finalizado</option></select></label>
-                <div className="mg-score-inputs"><label>Marcador local<input type="number" min="0" value={gameDraft.home_score} onChange={(event) => setGameDraft({ ...gameDraft, home_score: event.target.value })} placeholder="—" /></label><span>:</span><label>Marcador visitante<input type="number" min="0" value={gameDraft.away_score} onChange={(event) => setGameDraft({ ...gameDraft, away_score: event.target.value })} placeholder="—" /></label></div>
-                <fieldset className="mg-quarter-inputs mg-form-wide"><legend>Marcador por cuartos</legend>{([1, 2, 3, 4] as const).map((quarter) => { const homeKey = `home_q${quarter}_score` as keyof GameDraft; const awayKey = `away_q${quarter}_score` as keyof GameDraft; return <div key={quarter}><span>Q{quarter}</span><input aria-label={`Puntos local Q${quarter}`} type="number" min="0" value={gameDraft[homeKey]} onChange={(event) => setGameDraft({ ...gameDraft, [homeKey]: event.target.value })} placeholder="Local" /><input aria-label={`Puntos visitante Q${quarter}`} type="number" min="0" value={gameDraft[awayKey]} onChange={(event) => setGameDraft({ ...gameDraft, [awayKey]: event.target.value })} placeholder="Visitante" /></div>})}</fieldset>
+                <div className="mg-score-inputs"><label>Marcador local<input type="number" min="0" value={gameDraft.home_score} readOnly={hasQuarterScore(gameDraft, 'home')} onChange={(event) => setGameDraft({ ...gameDraft, home_score: event.target.value })} placeholder="—" /></label><span>:</span><label>Marcador visitante<input type="number" min="0" value={gameDraft.away_score} readOnly={hasQuarterScore(gameDraft, 'away')} onChange={(event) => setGameDraft({ ...gameDraft, away_score: event.target.value })} placeholder="—" /></label></div>
+                <fieldset className="mg-quarter-inputs mg-form-wide"><legend>Marcador por cuartos</legend>{([1, 2, 3, 4] as const).map((quarter) => { const homeKey = `home_q${quarter}_score` as keyof GameDraft; const awayKey = `away_q${quarter}_score` as keyof GameDraft; return <div key={quarter}><span>Q{quarter}</span><input aria-label={`Puntos local Q${quarter}`} type="number" min="0" value={gameDraft[homeKey]} onChange={(event) => updateQuarterScore(quarter, 'home', event.target.value)} placeholder="Local" /><input aria-label={`Puntos visitante Q${quarter}`} type="number" min="0" value={gameDraft[awayKey]} onChange={(event) => updateQuarterScore(quarter, 'away', event.target.value)} placeholder="Visitante" /></div>})}</fieldset>
+                <p className="mg-hint mg-form-wide">Al introducir los puntos de los cuartos, el marcador final se calcula automáticamente con la suma de Q1–Q4.</p>
                 <button className="mg-button mg-button--primary mg-form-wide" type="submit" disabled={busy || !gameDraft.home_team_id || !gameDraft.away_team_id || gameDraft.home_team_id === gameDraft.away_team_id}>{busy ? 'Guardando…' : editingGameId ? 'Guardar cambios' : 'Crear partido'}</button>
               </form>
               <p className="mg-hint">Al borrar un partido, Supabase elimina también las estadísticas asociadas.</p>
@@ -490,8 +590,9 @@ export default function ManagementPage() {
                 <label>Jugador<select required disabled={Boolean(editingStatsPlayerId) || statsLoading} value={playerId} onChange={(event) => setPlayerId(event.target.value)}><option value="">{statsLoading ? 'Cargando jugadores del partido…' : 'Selecciona jugador'}</option>{availablePlayers.map((player) => <option key={player.id} value={player.id}>#{player.shirt_number ?? '—'} · {player.name}</option>)}</select></label>
                 {!editingStatsPlayerId && !statsLoading && availablePlayers.length === 0 && <p className="mg-hint">Todos los jugadores activos ya tienen estadísticas en este partido. Edita una fila existente o elimina una antes de volver a añadirla.</p>}
                 <div className="mg-stat-fields">
-                  <StatInput label="Minutos" step="0.1" value={statsDraft.minutes} onChange={(value) => setStatsDraft({ ...statsDraft, minutes: value })} />
+                  <label>Minutos<input className="mg-minutes-input" type="text" inputMode="numeric" placeholder="12:43" pattern="\d{1,3}:[0-5]\d" value={statsDraft.minutes} onChange={(event) => setStatsDraft({ ...statsDraft, minutes: event.target.value })} aria-describedby="mg-minutes-hint" /><small id="mg-minutes-hint">Formato mm:ss</small></label>
                   <div className="mg-derived-stat"><span>Puntos</span><strong>{pointsFromStats(statsDraft)}</strong><small>2 × T2 + 3 × T3 + TL; conserva dato previo si no hay tiros</small></div>
+                  <StatInput label="+/- en pista" value={statsDraft.plus_minus} min="-999" onChange={(value) => setStatsDraft({ ...statsDraft, plus_minus: value })} />
                   <StatInput label="Rebotes ofensivos" value={statsDraft.offensive_rebounds} onChange={(value) => setStatsDraft({ ...statsDraft, offensive_rebounds: value })} />
                   <StatInput label="Rebotes defensivos" value={statsDraft.defensive_rebounds} onChange={(value) => setStatsDraft({ ...statsDraft, defensive_rebounds: value })} />
                   <div className="mg-derived-stat"><span>Rebotes totales</span><strong>{reboundsFromDraft(statsDraft)}</strong><small>Ofensivos + defensivos</small></div>
@@ -511,7 +612,7 @@ export default function ManagementPage() {
               </form>
               <div className="mg-stat-list-wrap">
                 <div className="mg-stats-list-heading"><div><span className="mg-eyebrow">{selectedGame.round || 'PARTIDO'} · {new Date(selectedGame.game_date).toLocaleDateString('es-ES')}</span><h3>{teamById.get(selectedGame.home_team_id)} <b>{selectedGame.home_score ?? '—'}–{selectedGame.away_score ?? '—'}</b> {teamById.get(selectedGame.away_team_id)}</h3></div><button type="button" className="mg-back-button" onClick={() => setPane('games')}>Volver a partidos</button></div>
-                {playerStats.length ? <div className="mg-stat-list">{playerStats.map((row) => <article className="mg-stat-row" key={row.player_id}><div className="mg-stat-player"><b>#{players.find((player) => player.id === row.player_id)?.shirt_number ?? '—'}</b><span>{players.find((player) => player.id === row.player_id)?.name ?? 'Jugador'}</span></div><div className="mg-stat-summary"><span><b>{row.points}</b> PTS</span><span><b>{totalRebounds(row)}</b> REB</span><span><b>{row.assists}</b> AST</span><span><b>{Number(row.minutes).toFixed(1)}</b> MIN</span></div><div className="mg-game-actions"><button type="button" onClick={() => startStatsEdit(row)}>Editar</button><button type="button" className="mg-danger-link" onClick={() => void deleteStats(row)}>Borrar</button></div></article>)}</div> : <div className="mg-empty">Todavía no hay líneas individuales para este partido.</div>}
+                {playerStats.length ? <div className="mg-stat-list">{playerStats.map((row) => <article className="mg-stat-row" key={row.player_id}><div className="mg-stat-player"><b>#{players.find((player) => player.id === row.player_id)?.shirt_number ?? '—'}</b><span>{players.find((player) => player.id === row.player_id)?.name ?? 'Jugador'}</span></div><div className="mg-stat-summary"><span><b>{row.points}</b> PTS</span><span><b>{totalRebounds(row)}</b> REB</span><span><b>{row.assists}</b> AST</span><span><b>{row.plus_minus > 0 ? '+' : ''}{row.plus_minus ?? 0}</b> +/-</span><span><b>{formatMinutes(playerMinutesSeconds(row))}</b> MIN</span></div><div className="mg-game-actions"><button type="button" onClick={() => startStatsEdit(row)}>Editar</button><button type="button" className="mg-danger-link" onClick={() => void deleteStats(row)}>Borrar</button></div></article>)}</div> : <div className="mg-empty">Todavía no hay líneas individuales para este partido.</div>}
               </div>
             </div>}</section>
         )}
@@ -520,8 +621,8 @@ export default function ManagementPage() {
   )
 }
 
-function StatInput({ label, value, onChange, step = '1' }: { label: string; value: number | string; onChange: (value: number) => void; step?: string }) {
-  return <label>{label}<input type="number" min="0" step={step} value={value} onChange={(event) => onChange(Number(event.target.value) || 0)} /></label>
+function StatInput({ label, value, onChange, step = '1', min = '0' }: { label: string; value: number | string; onChange: (value: number) => void; step?: string; min?: string }) {
+  return <label>{label}<input type="number" min={min} step={step} value={value} onChange={(event) => onChange(Number(event.target.value) || 0)} /></label>
 }
 
 function ManagementShell({ children }: { children: ReactNode }) {

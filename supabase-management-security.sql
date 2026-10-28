@@ -13,12 +13,35 @@ alter table public.players enable row level security;
 alter table public.games enable row level security;
 alter table public.game_team_stats enable row level security;
 alter table public.game_player_stats enable row level security;
+create table if not exists public.competition_standings (
+  competition_id uuid not null references public.competitions(id) on delete cascade,
+  season text not null,
+  team_id uuid not null references public.teams(id) on delete cascade,
+  position smallint not null check (position > 0),
+  played smallint not null default 0 check (played >= 0),
+  wins smallint not null default 0 check (wins >= 0),
+  losses smallint not null default 0 check (losses >= 0),
+  points_for integer not null default 0 check (points_for >= 0),
+  points_against integer not null default 0 check (points_against >= 0),
+  primary key (competition_id, season, team_id)
+);
+create table if not exists public.competition_teams (
+  competition_id uuid not null references public.competitions(id) on delete cascade,
+  team_id uuid not null references public.teams(id) on delete cascade,
+  primary key (competition_id, team_id)
+);
+alter table public.competition_teams enable row level security;
+alter table public.competition_standings enable row level security;
 alter table public.game_player_stats add column if not exists rebounds smallint;
+alter table public.game_player_stats add column if not exists minutes_seconds integer not null default 0;
+alter table public.game_player_stats add column if not exists plus_minus smallint not null default 0;
 
 grant usage on schema public to anon, authenticated;
 grant select on public.competitions, public.teams, public.players, public.games,
-  public.game_team_stats, public.game_player_stats to anon, authenticated;
+  public.game_team_stats, public.game_player_stats, public.competition_standings, public.competition_teams to anon, authenticated;
 grant insert, update, delete on public.games, public.game_player_stats to authenticated;
+grant insert, update, delete on public.competition_standings to authenticated;
+grant insert, update, delete on public.competition_teams to authenticated;
 grant select on public.admin_users to authenticated;
 
 -- Lectura pública para las pantallas públicas de la web y para cargar los formularios.
@@ -45,6 +68,33 @@ create policy game_team_stats_public_read on public.game_team_stats
 drop policy if exists game_player_stats_public_read on public.game_player_stats;
 create policy game_player_stats_public_read on public.game_player_stats
   for select to anon, authenticated using (true);
+
+drop policy if exists competition_standings_public_read on public.competition_standings;
+create policy competition_standings_public_read on public.competition_standings
+  for select to anon, authenticated using (true);
+drop policy if exists competition_teams_public_read on public.competition_teams;
+create policy competition_teams_public_read on public.competition_teams
+  for select to anon, authenticated using (true);
+drop policy if exists competition_teams_admin_insert on public.competition_teams;
+create policy competition_teams_admin_insert on public.competition_teams
+  for insert to authenticated with check (exists (select 1 from public.admin_users a where a.user_id = (select auth.uid())));
+drop policy if exists competition_teams_admin_update on public.competition_teams;
+create policy competition_teams_admin_update on public.competition_teams
+  for update to authenticated using (exists (select 1 from public.admin_users a where a.user_id = (select auth.uid())))
+  with check (exists (select 1 from public.admin_users a where a.user_id = (select auth.uid())));
+drop policy if exists competition_teams_admin_delete on public.competition_teams;
+create policy competition_teams_admin_delete on public.competition_teams
+  for delete to authenticated using (exists (select 1 from public.admin_users a where a.user_id = (select auth.uid())));
+drop policy if exists competition_standings_admin_insert on public.competition_standings;
+create policy competition_standings_admin_insert on public.competition_standings
+  for insert to authenticated with check (exists (select 1 from public.admin_users a where a.user_id = (select auth.uid())));
+drop policy if exists competition_standings_admin_update on public.competition_standings;
+create policy competition_standings_admin_update on public.competition_standings
+  for update to authenticated using (exists (select 1 from public.admin_users a where a.user_id = (select auth.uid())))
+  with check (exists (select 1 from public.admin_users a where a.user_id = (select auth.uid())));
+drop policy if exists competition_standings_admin_delete on public.competition_standings;
+create policy competition_standings_admin_delete on public.competition_standings
+  for delete to authenticated using (exists (select 1 from public.admin_users a where a.user_id = (select auth.uid())));
 
 -- Cada usuario autenticado solo puede consultar su propia fila de administración.
 drop policy if exists admin_users_read_self on public.admin_users;

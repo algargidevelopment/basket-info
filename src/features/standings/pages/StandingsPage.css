@@ -1,0 +1,78 @@
+.standings-page { display: flex; flex-direction: column; gap: 1.1rem; padding: 0.6rem 0 2.5rem; color: #172231; }
+.standings-hero { position: relative; display: flex; min-height: 12rem; align-items: center; justify-content: space-between; gap: 1.5rem; overflow: hidden; padding: 1.8rem 2rem; border: 1px solid rgb(255 255 255 / 10%); border-radius: 0.9rem; background: radial-gradient(ellipse at 91% 4%, rgb(233 88 0 / 31%), transparent 34%), linear-gradient(112deg, #172633, #263641 58%, #45352c); box-shadow: 0 8px 24px rgb(13 27 42 / 15%); color: #fff; }
+.standings-hero::after { position: absolute; right: 13rem; bottom: -7.3rem; width: 14rem; aspect-ratio: 1; border: 1px solid rgb(255 255 255 / 7%); border-radius: 50%; box-shadow: 0 0 0 1.2rem rgb(255 255 255 / 2%), 0 0 0 2.5rem rgb(255 255 255 / 2%); content: ''; pointer-events: none; }
+.standings-hero__copy { position: relative; z-index: 1; }
+.standings-eyebrow { color: #9ba9b6; font-family: var(--font-stats); font-size: 0.6rem; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; }
+.standings-hero h1 { margin: 0.55rem 0 0.2rem; font-family: var(--font-heading); font-size: clamp(2rem, 5vw, 3rem); font-weight: 900; letter-spacing: -0.055em; line-height: 1; }
+.standings-hero p { margin: 0.6rem 0 0; color: rgb(255 255 255 / 68%); font-size: 0.82rem; }
+.standings-hero__competition { position: relative; z-index: 1; display: grid; grid-template-columns: auto 1fr; align-items: center; gap: 0.1rem 0.55rem; min-width: 8rem; padding: 0.75rem 0.9rem; border: 1px solid rgb(255 255 255 / 15%); border-radius: 0.65rem; background: rgb(11 20 29 / 23%); color: #fff; font-family: var(--font-stats); font-size: 0.76rem; font-weight: 800; }
+.standings-hero__competition small { grid-column: 2; color: rgb(255 255 255 / 54%); font-size: 0.53rem; font-weight: 600; }
+.standings-hero__dot { grid-row: span 2; width: 0.48rem; aspect-ratio: 1; border-radius: 50%; background: #f26719; box-shadow: 0 0 0 4px rgb(242 103 25 / 17%); }
+.standings-highlights { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
+.standings-highlights article { display: flex; min-height: 6rem; flex-direction: column; justify-content: center; gap: 0.18rem; padding: 0.75rem 1rem; border: 1px solid #e8edf1; border-radius: 0.75rem; background: #fff; box-shadow: 0 3px 13px rgb(13 27 42 / 3%); }
+.standings-highlights article > span { color: #7f8b99; font-size: 0.63rem; font-weight: 700; }
+.standings-highlights strong { color: #1c2c3e; font-family: var(--font-stats); font-size: 1.35rem; font-weight: 800; font-variant-numeric: tabular-nums; }
+.standings-highlights small { color: #9aa4ae; font-size: 0.57rem; }
+.standings-highlights .standings-highlight--valencia { border-color: #f2d1bf; background: linear-gradient(115deg, #fff8f3, #fff); }
+.standings-highlight--valencia strong { color: var(--color-orange); }
+.standings-card { overflow: hidden; border: 1px solid #e8edf1; border-radius: 0.9rem; background: #fff; box-shadow: 0 4px 18px rgb(13 27 42 / 4%); }
+.standings-card__heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.15rem 1.25rem; }
+.standings-card__heading h2 { margin: 0.27rem 0 0; color: #1b2a3c; font-family: var(--font-heading); font-size: 1.05rem; font-weight: 850; letter-spacing: -0.035em; }
+.standings-admin-link { display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.48rem 0.68rem; border: 1px solid #e6eaee; border-radius: 0.5rem; color: #647284; font-size: 0.63rem; font-weight: 700; text-decoration: none; transition: border-color 150ms ease, color 150ms ease, background 150ms ease; }
+.standings-admin-link:hover { border-color: #f1c2a8; background: #fff7f2; color: #c84b08; }
+.standings-admin-link span { font-size: 0.75rem; }
+.standings-table-scroll { overflow-x: auto; }
+.standings-table { width: 100%; border-collapse: collapse; font-family: var(--font-stats); font-variant-numeric: tabular-nums; }
+.standings-table thead { background: #f6f8f9; }
+.standings-table th { height: 2.45rem; padding: 0 0.7rem; color: #8995a2; font-size: 0.56rem; font-weight: 800; text-align: right; white-space: nowrap; }
+.standings-table th:first-child, .standings-table td:first-child { padding-left: 1.25rem; }
+.standings-table th:last-child, .standings-table td:last-child { padding-right: 1.25rem; }
+.standings-table__rank { width: 3rem; text-align: center !important; }
+.standings-table__team { min-width: 14rem; text-align: left !important; }
+.standings-table tbody tr { border-bottom: 1px solid #eef1f3; transition: background 130ms ease; }
+.standings-table tbody tr:last-child { border-bottom: 0; }
+.standings-table tbody tr:hover { background: #fafbfc; }
+.standings-table td { height: 3.35rem; padding: 0 0.7rem; color: #546174; font-size: 0.69rem; text-align: right; white-space: nowrap; }
+.standings-table__rank span { display: inline-grid; width: 1.45rem; aspect-ratio: 1; place-items: center; border-radius: 50%; color: #728091; font-size: 0.62rem; font-weight: 700; }
+.standings-table__team > div { display: inline-grid; width: 1.85rem; aspect-ratio: 1; place-items: center; overflow: hidden; margin-right: 0.55rem; border: 1px solid #e8edf0; border-radius: 50%; background: #f4f6f7; color: #576678; font-size: 0.48rem; font-weight: 800; vertical-align: middle; }
+.standings-team-mark img { width: 100%; height: 100%; object-fit: contain; }
+.standings-table__team strong { color: #344256; font-family: var(--font-body); font-size: 0.72rem; font-weight: 700; vertical-align: middle; }
+.standings-table__team small { margin-left: 0.5rem; padding: 0.16rem 0.32rem; border-radius: 0.22rem; background: #fff0e7; color: #c44b08; font-size: 0.46rem; font-weight: 800; vertical-align: middle; }
+.standings-table__wins { color: #26384b !important; font-weight: 800; }
+.standings-table .is-positive { color: #3d8251; font-weight: 700; }
+.standings-table .is-negative { color: #ac6262; }
+.standings-table tbody tr.is-valencia { background: #fff7f2; }
+.standings-table tbody tr.is-valencia td:first-child { box-shadow: inset 3px 0 #f26719; }
+.standings-table tbody tr.is-valencia .standings-table__rank span { background: #f26719; color: #fff; }
+.standings-table tbody tr.is-valencia .standings-table__team strong { color: #b4480a; }
+.standings-state { padding: 2.2rem 1rem; color: #85919e; font-size: 0.77rem; line-height: 1.55; text-align: center; }
+.standings-state--error { color: #9f302b; }
+.standings-card__footer { display: flex; flex-wrap: wrap; align-items: center; gap: 0.55rem 1.2rem; padding: 0.75rem 1.25rem; border-top: 1px solid #edf0f2; color: #99a3ad; font-size: 0.55rem; }
+.standings-card__footer > span:first-child { display: inline-flex; align-items: center; gap: 0.35rem; color: #697687; font-weight: 700; }
+.standings-football-dot { width: 0.38rem; aspect-ratio: 1; border-radius: 50%; background: #f26719; }
+
+@media (max-width: 700px) {
+  .standings-page { gap: 0.8rem; padding-top: 0.35rem; }
+  .standings-hero { min-height: 9rem; padding: 1.2rem; }
+  .standings-hero::after { right: 3rem; }
+  .standings-hero p { max-width: 14rem; font-size: 0.72rem; }
+  .standings-hero__competition { min-width: auto; padding: 0.55rem; font-size: 0.66rem; }
+  .standings-highlights { gap: 0.45rem; }
+  .standings-highlights article { min-height: 5.2rem; padding: 0.6rem; }
+  .standings-highlights article > span { font-size: 0.55rem; }
+  .standings-highlights strong { font-size: 1.12rem; }
+  .standings-highlights small { font-size: 0.5rem; }
+  .standings-card__heading { padding: 0.9rem; }
+  .standings-table { min-width: 42rem; }
+  .standings-table th:first-child, .standings-table td:first-child { padding-left: 0.75rem; }
+  .standings-table th:last-child, .standings-table td:last-child { padding-right: 0.75rem; }
+  .standings-card__footer { padding: 0.7rem 0.9rem; }
+}
+
+@media (max-width: 420px) {
+  .standings-hero { align-items: flex-start; flex-direction: column; gap: 0.8rem; }
+  .standings-hero__competition { display: inline-grid; }
+  .standings-highlights { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .standings-highlights article { min-height: 4.8rem; }
+  .standings-highlights article > span { min-height: 1.3em; }
+}

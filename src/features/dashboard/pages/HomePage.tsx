@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router'
 import { supabase } from '../../../lib/supabase'
 import { useCompetition } from '../../../lib/useCompetition'
+import SummaryStandings from '../components/summaryStandings/SummaryStandings'
 import './HomePage.css'
 
 const SEASON = '2026-27'
@@ -16,7 +17,8 @@ type Game = {
 }
 type Player = { id: string; name: string; photo_url: string | null; shirt_number: number | null; position: string | null }
 type PlayerLine = { game_id: string; player_id: string; points: number; rebounds: number | null; offensive_rebounds: number; defensive_rebounds: number; assists: number }
-type StandingsRow = { team: Team; played: number; wins: number; losses: number; pointsFor: number; pointsAgainst: number }
+type StandingsRow = { team: Team; position: number; played: number; wins: number; losses: number; pointsFor: number; pointsAgainst: number }
+type PublishedStanding = { team_id: string; position: number; played: number; wins: number; losses: number; points_for: number; points_against: number }
 
 function dateLabel(value: string, options: Intl.DateTimeFormatOptions = { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }) {
   return new Intl.DateTimeFormat('es-ES', options).format(new Date(value))
@@ -54,6 +56,8 @@ export default function HomePage() {
   const { competition } = useCompetition()
   const [teams, setTeams] = useState<Team[]>([])
   const [games, setGames] = useState<Game[]>([])
+  const [publishedStandings, setPublishedStandings] = useState<PublishedStanding[]>([])
+  const [competitionTeamIds, setCompetitionTeamIds] = useState<string[]>([])
   const [players, setPlayers] = useState<Player[]>([])
   const [playerLines, setPlayerLines] = useState<PlayerLine[]>([])
   const [loading, setLoading] = useState(true)
@@ -61,7 +65,7 @@ export default function HomePage() {
   const [now, setNow] = useState(Date.now())
 
   useEffect(() => {
-    const timer = window.setInterval(() => setNow(Date.now()), 60_000)
+    const timer = window.setInterval(() => setNow(Date.now()), 1_000)
     return () => window.clearInterval(timer)
   }, [])
 
@@ -83,8 +87,16 @@ export default function HomePage() {
         .from('games')
         .select('id,round,game_date,home_team_id,away_team_id,venue,status,home_score,away_score,home_q1_score,away_q1_score,home_q2_score,away_q2_score,home_q3_score,away_q3_score,home_q4_score,away_q4_score')
         .eq('competition_id', competitionResult.data.id).eq('season', SEASON).order('game_date', { ascending: true })
+      const { data: standingRows, error: standingsError } = await supabase!
+        .from('competition_standings').select('team_id,position,played,wins,losses,points_for,points_against')
+        .eq('competition_id', competitionResult.data.id).eq('season', SEASON).order('position')
+      const { data: competitionTeamRows } = await supabase!
+        .from('competition_teams').select('team_id').eq('competition_id', competitionResult.data.id)
       if (gamesError) { if (!cancelled) { setError(gamesError.message); setLoading(false) }; return }
+      if (standingsError) { if (!cancelled) { setError(standingsError.message); setLoading(false) }; return }
       const allGames = (gameRows ?? []) as Game[]
+      const participantIds = new Set<string>((competitionTeamRows ?? []).map((row) => row.team_id as string))
+      if (participantIds.size === 0) for (const game of allGames) { participantIds.add(game.home_team_id); participantIds.add(game.away_team_id) }
       const finishedIds = allGames.filter((game) => game.status === 'finished').map((game) => game.id)
       let lines: PlayerLine[] = []
       if (finishedIds.length) {
@@ -95,7 +107,7 @@ export default function HomePage() {
         lines = (playerStatsResult.data ?? []) as PlayerLine[]
       }
       if (!cancelled) {
-        setTeams((teamResult.data ?? []) as Team[]); setGames(allGames); setPlayers((playerResult.data ?? []) as Player[]); setPlayerLines(lines); setLoading(false)
+        setTeams((teamResult.data ?? []) as Team[]); setGames(allGames); setCompetitionTeamIds([...participantIds]); setPublishedStandings((standingRows ?? []) as PublishedStanding[]); setPlayers((playerResult.data ?? []) as Player[]); setPlayerLines(lines); setLoading(false)
       }
     }
     void load()
@@ -111,7 +123,7 @@ export default function HomePage() {
 
   const standings = useMemo(() => {
     const rows = new Map<string, StandingsRow>()
-    teams.forEach((team) => rows.set(team.id, { team, played: 0, wins: 0, losses: 0, pointsFor: 0, pointsAgainst: 0 }))
+    teams.filter((team) => competitionTeamIds.includes(team.id)).forEach((team) => rows.set(team.id, { team, position: 0, played: 0, wins: 0, losses: 0, pointsFor: 0, pointsAgainst: 0 }))
     played.forEach((game) => {
       const home = rows.get(game.home_team_id); const away = rows.get(game.away_team_id)
       if (!home || !away || game.home_score === null || game.away_score === null) return
@@ -119,8 +131,15 @@ export default function HomePage() {
       away.pointsFor += game.away_score; away.pointsAgainst += game.home_score
       if (game.home_score > game.away_score) { home.wins++; away.losses++ } else { away.wins++; home.losses++ }
     })
-    return [...rows.values()].sort((a, b) => b.wins - a.wins || (b.pointsFor - b.pointsAgainst) - (a.pointsFor - a.pointsAgainst) || b.pointsFor - a.pointsFor || a.team.name.localeCompare(b.team.name))
-  }, [teams, played])
+    const computed = [...rows.values()].sort((a, b) => b.wins - a.wins || (b.pointsFor - b.pointsAgainst) - (a.pointsFor - a.pointsAgainst) || b.pointsFor - a.pointsFor || a.team.name.localeCompare(b.team.name))
+    if (!publishedStandings.length) return computed.map((row, index) => ({ ...row, position: index + 1 }))
+    const official = new Map(publishedStandings.map((row) => [row.team_id, row]))
+    const ordered = computed.map((row) => {
+      const published = official.get(row.team.id)
+      return published ? { ...row, wins: published.wins, losses: published.losses, played: published.played, pointsFor: published.points_for, pointsAgainst: published.points_against } : row
+    }).sort((a, b) => (official.get(a.team.id)?.position ?? Number.MAX_SAFE_INTEGER) - (official.get(b.team.id)?.position ?? Number.MAX_SAFE_INTEGER) || a.team.name.localeCompare(b.team.name))
+    return ordered.map((row, index) => ({ ...row, position: official.get(row.team.id)?.position ?? index + 1 }))
+  }, [teams, played, publishedStandings, competitionTeamIds])
 
   const recentValencia = useMemo(() => valencia ? recordFor(valencia.id, games).reverse() : [], [valencia, games])
   const teamRecord = useMemo(() => {
@@ -134,8 +153,9 @@ export default function HomePage() {
   }, [standings, recentValencia, valencia])
   const nearby = useMemo(() => {
     const index = standings.findIndex((row) => row.team.id === valencia?.id)
-    if (index < 0) return standings.slice(0, 5)
-    return standings.slice(Math.max(0, index - 2), Math.min(standings.length, index + 3))
+    if (index < 0) return standings.slice(0, 4)
+    const start = Math.max(0, Math.min(index - 1, standings.length - 4))
+    return standings.slice(start, start + 4)
   }, [standings, valencia])
 
   const leaders = useMemo(() => {
@@ -160,7 +180,12 @@ export default function HomePage() {
   const homeTeam = nextMatch ? teamsById.get(nextMatch.home_team_id) : undefined
   const awayTeam = nextMatch ? teamsById.get(nextMatch.away_team_id) : undefined
   const timeLeft = nextMatch ? Math.max(0, new Date(nextMatch.game_date).getTime() - now) : 0
-  const countdown = { days: Math.floor(timeLeft / 86_400_000), hours: Math.floor(timeLeft % 86_400_000 / 3_600_000), minutes: Math.floor(timeLeft % 3_600_000 / 60_000) }
+  const countdown = {
+    days: Math.floor(timeLeft / 86_400_000),
+    hours: Math.floor(timeLeft % 86_400_000 / 3_600_000),
+    minutes: Math.floor(timeLeft % 3_600_000 / 60_000),
+    seconds: Math.floor(timeLeft % 60_000 / 1_000),
+  }
 
   function addToCalendar(game: Game) {
     const home = teamsById.get(game.home_team_id)?.name ?? 'Local'; const away = teamsById.get(game.away_team_id)?.name ?? 'Visitante'
@@ -181,10 +206,10 @@ export default function HomePage() {
         <div className="home-hero__top"><div className="home-hero__pills"><span className="home-pill home-pill--orange">{nextMatch ? 'Próximo encuentro' : 'Temporada 2026 / 27'}</span><span className="home-pill">{competition} · {nextMatch?.round ?? 'Calendario'}</span></div><span className="home-hero__broadcast">{competition === 'EuroLeague' ? 'EuroLeague' : 'Liga Endesa'} <b>·</b> Valencia Basket</span></div>
         {nextMatch ? <>
           <div className="home-hero__match">
-            <div className="home-hero__team"><TeamMark team={homeTeam} valencia={homeTeam?.id === valencia?.id} /><span className="home-hero__venue-label">Local</span><h1>{homeTeam?.name ?? 'Equipo local'}</h1><p>{homeTeam?.id === valencia?.id ? `${teamRecord.row?.wins ?? 0}V - ${teamRecord.row?.losses ?? 0}D` : `${standings.find((row) => row.team.id === homeTeam?.id)?.wins ?? 0}V - ${standings.find((row) => row.team.id === homeTeam?.id)?.losses ?? 0}D`}</p><div className="home-form"><span>Racha:</span>{(homeTeam?.id === valencia?.id ? recentValencia : recordFor(homeTeam?.id ?? '', games).reverse()).slice(0, 5).reverse().map((row, i) => <i className={outcome(row.scored, row.conceded) === 'W' ? 'is-win' : 'is-loss'} key={`${row.game.id}-${i}`}>{outcome(row.scored, row.conceded) === 'W' ? 'V' : 'D'}</i>)}</div></div>
+            <div className="home-hero__team"><TeamMark team={homeTeam} valencia={homeTeam?.id === valencia?.id} /><span className="home-hero__venue-label">Local</span><h1>{homeTeam?.name ?? 'Equipo local'}</h1><p>{homeTeam?.id === valencia?.id ? `${teamRecord.row?.wins ?? 0}V - ${teamRecord.row?.losses ?? 0}D` : `${standings.find((row) => row.team.id === homeTeam?.id)?.wins ?? 0}V - ${standings.find((row) => row.team.id === homeTeam?.id)?.losses ?? 0}D`}</p>{homeTeam?.id === valencia?.id && recentValencia.length > 0 && <div className="home-form"><span>Racha:</span>{recentValencia.slice(0, 5).reverse().map((row, i) => <i className={outcome(row.scored, row.conceded) === 'W' ? 'is-win' : 'is-loss'} key={`${row.game.id}-${i}`}>{outcome(row.scored, row.conceded) === 'W' ? 'V' : 'D'}</i>)}</div>}</div>
             <div className="home-hero__schedule"><span>VS</span><time>{new Intl.DateTimeFormat('es-ES', { hour: '2-digit', minute: '2-digit' }).format(new Date(nextMatch.game_date))}</time><small>{dateLabel(nextMatch.game_date, { weekday: 'short', day: '2-digit', month: 'short' })}</small></div>
-            <div className="home-hero__team home-hero__team--right"><TeamMark team={awayTeam} valencia={awayTeam?.id === valencia?.id} /><span className="home-hero__venue-label">Visitante</span><h2>{awayTeam?.name ?? 'Equipo visitante'}</h2><p>{awayTeam?.id === valencia?.id ? `${teamRecord.row?.wins ?? 0}V - ${teamRecord.row?.losses ?? 0}D` : `${standings.find((row) => row.team.id === awayTeam?.id)?.wins ?? 0}V - ${standings.find((row) => row.team.id === awayTeam?.id)?.losses ?? 0}D`}</p><div className="home-form"><span>Racha:</span>{(awayTeam?.id === valencia?.id ? recentValencia : recordFor(awayTeam?.id ?? '', games).reverse()).slice(0, 5).reverse().map((row, i) => <i className={outcome(row.scored, row.conceded) === 'W' ? 'is-win' : 'is-loss'} key={`${row.game.id}-${i}`}>{outcome(row.scored, row.conceded) === 'W' ? 'V' : 'D'}</i>)}</div></div>
-            <div className="home-hero__countdown"><span>{nextMatch.status === 'live' ? 'Partido en juego' : 'Tiempo restante'}</span><div><b>{String(countdown.days).padStart(2, '0')}</b><small>días</small><b>{String(countdown.hours).padStart(2, '0')}</b><small>horas</small><b>{String(countdown.minutes).padStart(2, '0')}</b><small>min</small></div><p>⌖ {nextMatch.venue ?? (nextIsHome ? homeTeam?.location : awayTeam?.location) ?? 'Estadio pendiente'}</p></div>
+            <div className="home-hero__team home-hero__team--right"><TeamMark team={awayTeam} valencia={awayTeam?.id === valencia?.id} /><span className="home-hero__venue-label">Visitante</span><h2>{awayTeam?.name ?? 'Equipo visitante'}</h2><p>{awayTeam?.id === valencia?.id ? `${teamRecord.row?.wins ?? 0}V - ${teamRecord.row?.losses ?? 0}D` : `${standings.find((row) => row.team.id === awayTeam?.id)?.wins ?? 0}V - ${standings.find((row) => row.team.id === awayTeam?.id)?.losses ?? 0}D`}</p>{awayTeam?.id === valencia?.id && recentValencia.length > 0 && <div className="home-form"><span>Racha:</span>{recentValencia.slice(0, 5).reverse().map((row, i) => <i className={outcome(row.scored, row.conceded) === 'W' ? 'is-win' : 'is-loss'} key={`${row.game.id}-${i}`}>{outcome(row.scored, row.conceded) === 'W' ? 'V' : 'D'}</i>)}</div>}</div>
+            <div className="home-hero__countdown"><span>{nextMatch.status === 'live' ? 'Partido en juego' : 'Cuenta atrás del partido'}</span><div><span className="home-countdown-unit"><b>{String(countdown.days).padStart(2, '0')}</b><small>días</small></span><span className="home-countdown-unit"><b>{String(countdown.hours).padStart(2, '0')}</b><small>horas</small></span><span className="home-countdown-unit"><b>{String(countdown.minutes).padStart(2, '0')}</b><small>min</small></span><span className="home-countdown-unit"><b>{String(countdown.seconds).padStart(2, '0')}</b><small>seg</small></span></div><p>⌖ {nextMatch.venue ?? (nextIsHome ? homeTeam?.location : awayTeam?.location) ?? 'Estadio pendiente'}</p></div>
           </div>
           <footer className="home-hero__footer"><span>⌖ {nextMatch.venue ?? (nextIsHome ? homeTeam?.location : awayTeam?.location) ?? 'Estadio pendiente'}</span><div><button type="button" onClick={() => addToCalendar(nextMatch)}>＋ Añadir a calendario</button><Link to="/partidos">Ver partidos <b>→</b></Link></div></footer>
         </> : <div className="home-no-match"><strong>No hay próximos partidos cargados</strong><span>Cuando añadas el siguiente encuentro de {competition}, aparecerá aquí.</span><Link to="/partidos">Ver partidos</Link></div>}
@@ -203,9 +228,9 @@ export default function HomePage() {
 
         <article className="home-card home-summary">
           <header><span className="home-section-tag">Liga {competition} · 2026/27</span><span className="home-orange-label">Temporada</span></header>
-          <div className="home-metrics"><div><small>Puesto</small><b className="home-orange-value">{teamRecord.row ? `${standings.findIndex((row) => row.team.id === valencia?.id) + 1}º` : '—'}</b><span>Clasificación</span></div><div><small>Balance</small><b>{teamRecord.row ? `${teamRecord.row.wins} - ${teamRecord.row.losses}` : '0 - 0'}</b><span>Victorias - derrotas</span></div><div><small>Racha</small><b className="home-orange-value">{teamRecord.streak}</b><span>Consecutiva</span></div><div><small>Diferencial</small><b>{teamRecord.row ? signed(teamRecord.row.pointsFor - teamRecord.row.pointsAgainst) : '+0'}</b><span>Puntos netos</span></div></div>
+          <div className="home-metrics"><div><small>Puesto</small><b className="home-orange-value">{teamRecord.row ? `${teamRecord.row.position}º` : '—'}</b><span>Clasificación</span></div><div><small>Balance</small><b>{teamRecord.row ? `${teamRecord.row.wins} - ${teamRecord.row.losses}` : '0 - 0'}</b><span>Victorias - derrotas</span></div><div><small>Racha</small><b className="home-orange-value">{teamRecord.streak}</b><span>Consecutiva</span></div><div><small>Diferencial</small><b>{teamRecord.row ? signed(teamRecord.row.pointsFor - teamRecord.row.pointsAgainst) : '+0'}</b><span>Puntos netos</span></div></div>
           <div className="home-team-averages"><div><span>Anotación media</span><b>{teamRecord.row?.played ? `${teamRecord.ppg.toFixed(1)} PPP` : '—'}</b><div><i style={{ width: `${Math.min(100, teamRecord.ppg / 120 * 100)}%` }} /></div></div><div><span>Puntos encajados</span><b>{teamRecord.row?.played ? `${teamRecord.oppg.toFixed(1)} PPP` : '—'}</b><div><i className="home-gray-fill" style={{ width: `${Math.min(100, teamRecord.oppg / 120 * 100)}%` }} /></div></div></div>
-          <ol className="home-nearby">{nearby.map((row) => <li className={row.team.id === valencia?.id ? 'is-current' : ''} key={row.team.id}><span>{standings.indexOf(row) + 1}.</span><b>{row.team.name}</b><span>{row.wins} - {row.losses}</span></li>)}</ol>
+          <SummaryStandings teams={nearby.map((row) => ({ id: row.team.id, position: row.position, name: row.team.name, wins: row.wins, losses: row.losses, current: row.team.id === valencia?.id }))} />
           <Link className="home-card-link" to="/clasificacion">Ver clasificación completa <span>▤</span></Link>
         </article>
       </section>

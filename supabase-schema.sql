@@ -15,6 +15,26 @@ create table public.teams (
   location text
 );
 
+create table public.competition_teams (
+  competition_id uuid not null references public.competitions(id) on delete cascade,
+  team_id uuid not null references public.teams(id) on delete cascade,
+  primary key (competition_id, team_id)
+);
+
+-- Clasificación publicada por competición y temporada.
+create table public.competition_standings (
+  competition_id uuid not null references public.competitions(id) on delete cascade,
+  season text not null,
+  team_id uuid not null references public.teams(id) on delete cascade,
+  position smallint not null check (position > 0),
+  played smallint not null default 0 check (played >= 0),
+  wins smallint not null default 0 check (wins >= 0),
+  losses smallint not null default 0 check (losses >= 0),
+  points_for integer not null default 0 check (points_for >= 0),
+  points_against integer not null default 0 check (points_against >= 0),
+  primary key (competition_id, season, team_id)
+);
+
 -- Esta tabla se usa únicamente para jugadores de Valencia Basket.
 create table public.players (
   id uuid primary key default gen_random_uuid(),
@@ -101,6 +121,8 @@ create table public.game_player_stats (
   game_id uuid not null references public.games(id) on delete cascade,
   player_id uuid not null references public.players(id) on delete cascade,
   minutes numeric(4,1) not null default 0,
+  minutes_seconds integer not null default 0 check (minutes_seconds >= 0),
+  plus_minus smallint not null default 0,
   points smallint not null default 0,
   two_points_made smallint not null default 0,
   two_points_attempted smallint not null default 0,

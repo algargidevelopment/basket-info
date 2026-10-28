@@ -27,6 +27,17 @@
 .mg-card-heading { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; margin-bottom: 1rem; }
 .mg-card-heading h2 { margin: 0.3rem 0 0; color: var(--color-navy); font-family: var(--font-heading); font-size: 1.2rem; font-weight: 800; letter-spacing: -0.04em; }
 .mg-games-list { display: flex; flex-direction: column; }
+.mg-standings-editor { overflow-x: auto; }
+.mg-standings-head, .mg-standing-row { display: grid; grid-template-columns: minmax(11rem, 1fr) repeat(6, minmax(3.8rem, 5.5rem)); align-items: center; gap: 0.55rem; }
+.mg-standings-head { padding: 0.6rem 0.45rem; color: #8995a2; font-family: var(--font-stats); font-size: 0.58rem; font-weight: 700; text-align: center; }
+.mg-standings-head span:first-child { text-align: left; }
+.mg-standing-row { padding: 0.55rem 0.45rem; border-top: 1px solid #eff1f3; }
+.mg-standing-row > b { overflow: hidden; color: #38475a; font-size: 0.7rem; text-overflow: ellipsis; white-space: nowrap; }
+.mg-standing-position { display: grid; min-height: 2.2rem; place-items: center; border-radius: 0.45rem; background: #fff0e7; color: var(--color-orange); font-family: var(--font-stats); font-size: 0.7rem; }
+.mg-standing-row label { display: block; }
+.mg-standing-row label span { display: none; }
+.mg-standing-row input { width: 100%; min-height: 2.2rem; padding: 0 0.35rem; border: 1px solid #e3e8ed; border-radius: 0.45rem; color: #26364a; font-family: var(--font-stats); font-size: 0.7rem; text-align: center; }
+.mg-standing-row input:focus { border-color: #f5a478; outline: 3px solid rgb(243 91 4 / 10%); }
 .mg-game-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 0.5rem; padding: 0.75rem 0; border-top: 1px solid #eff1f3; }
 .mg-game-select { display: grid; min-width: 0; grid-template-columns: 3.6rem minmax(0, 1fr) 2.8rem auto; align-items: center; gap: 0.6rem; padding: 0; border: 0; background: transparent; color: inherit; cursor: pointer; text-align: left; }
 .mg-game-date { color: #273448; font-family: var(--font-stats); font-size: 0.76rem; font-weight: 700; }
@@ -56,6 +67,7 @@
 .mg-quarter-inputs > div { display: grid; grid-template-columns: 1fr; gap: 0.3rem; min-width: 0; }
 .mg-quarter-inputs > div > span { color: #8792a0; font-family: var(--font-stats); font-size: 0.6rem; font-weight: 700; text-align: center; }
 .mg-quarter-inputs input { min-height: 2.25rem !important; padding-inline: 0.35rem !important; text-align: center; }
+.mg-score-inputs input:read-only { border-color: #f2d9ca; background: #fff7f2; color: var(--color-orange); font-weight: 800; }
 .mg-form .mg-button { margin-top: 0.15rem; }
 .mg-hint { margin: 0.9rem 0 0; color: #9aa3ad; font-size: 0.62rem; line-height: 1.5; }
 .mg-close-form { display: grid; width: 1.8rem; aspect-ratio: 1; place-items: center; border: 1px solid #e4e9ed; border-radius: 50%; background: #fff; color: #718092; cursor: pointer; font-size: 1.1rem; }
