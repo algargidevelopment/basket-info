@@ -1,12 +1,36 @@
 import './Header.css'
+import { useEffect, useRef, useState } from 'react'
 import { NavLink } from 'react-router'
 import { useCompetition } from '../../lib/useCompetition'
 
 export default function Header() {
   const { competition, setCompetition } = useCompetition()
+  const [hidden, setHidden] = useState(false)
+  const previousScrollY = useRef(0)
+
+  useEffect(() => {
+    previousScrollY.current = window.scrollY
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY
+      const difference = currentScrollY - previousScrollY.current
+
+      if (currentScrollY < 80) {
+        setHidden(false)
+      } else if (difference > 6) {
+        setHidden(true)
+      } else if (difference < -6) {
+        setHidden(false)
+      }
+
+      if (Math.abs(difference) > 6) previousScrollY.current = currentScrollY
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
 
   return (
-    <header className="site-header">
+    <header className={`site-header${hidden ? ' site-header--hidden' : ''}`}>
       <NavLink className="site-header__brand" to="/" aria-label="Taronja Basket, inicio">
         <span className="site-header__brand-mark" aria-hidden="true">TB</span>
         <span className="site-header__brand-name">Taronja<span>Basket</span></span>
