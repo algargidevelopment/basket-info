@@ -191,10 +191,14 @@ export default function HomePage() {
     const home = teamsById.get(game.home_team_id)?.name ?? 'Local'; const away = teamsById.get(game.away_team_id)?.name ?? 'Visitante'
     const start = new Date(game.game_date); const end = new Date(start.getTime() + 2 * 60 * 60 * 1000)
     const stamp = (date: Date) => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
-    const escape = (value: string) => value.replace(/\\/g, '\\\\').replace(/,/g, '\\,').replace(/;/g, '\\;').replace(/\n/g, '\\n')
-    const content = `BEGIN:VCALENDAR\nVERSION:2.0\nPRODID:-//Basket Info//Valencia Basket//ES\nBEGIN:VEVENT\nUID:${game.id}@basket-info\nDTSTAMP:${stamp(new Date())}\nDTSTART:${stamp(start)}\nDTEND:${stamp(end)}\nSUMMARY:${escape(`${home} - ${away}`)}\nLOCATION:${escape(game.venue ?? '')}\nEND:VEVENT\nEND:VCALENDAR`
-    const url = URL.createObjectURL(new Blob([content], { type: 'text/calendar;charset=utf-8' }))
-    const anchor = document.createElement('a'); anchor.href = url; anchor.download = 'partido-valencia-basket.ics'; anchor.click(); URL.revokeObjectURL(url)
+    const params = new URLSearchParams({
+      action: 'TEMPLATE',
+      text: `${home} - ${away}`,
+      dates: `${stamp(start)}/${stamp(end)}`,
+      location: game.venue ?? '',
+      details: `${competition}${game.round ? ` · ${game.round}` : ''}`,
+    })
+    window.open(`https://calendar.google.com/calendar/render?${params.toString()}`, '_blank', 'noopener,noreferrer')
   }
 
   if (loading) return <div className="home-page"><div className="home-loading">Cargando la temporada…</div></div>
