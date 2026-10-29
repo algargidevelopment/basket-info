@@ -1,7 +1,8 @@
 
 import '../styles/app.css'
+import { useLayoutEffect } from 'react'
 import Header from '../components/layout/Header'
-import { Route, Routes } from 'react-router'
+import { Route, Routes, useLocation } from 'react-router'
 import GamesPage from '../features/games/pages/GamesPage'
 
 import HomePage from '../features/dashboard/pages/HomePage'
@@ -11,6 +12,19 @@ import TeamStatsPage from '../features/team-stats/pages/TeamStatsPage'
 import { CompetitionProvider } from '../lib/CompetitionProvider'
 import ManagementPage from '../features/management/pages/ManagementPage'
 
+function ScrollToTop() {
+  const { pathname } = useLocation()
+
+  useLayoutEffect(() => {
+    const previousScrollBehavior = document.documentElement.style.scrollBehavior
+    document.documentElement.style.scrollBehavior = 'auto'
+    window.scrollTo(0, 0)
+    document.documentElement.style.scrollBehavior = previousScrollBehavior
+  }, [pathname])
+
+  return null
+}
+
 
 
 function App() {
@@ -19,6 +33,7 @@ function App() {
   return (
     <CompetitionProvider>
       <div className="app-shell">
+        <ScrollToTop />
         <Header />
         <main className="app-main">
           <Routes>
