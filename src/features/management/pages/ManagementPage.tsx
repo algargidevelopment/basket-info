@@ -70,7 +70,8 @@ type GameDraft = {
   home_q4_score: string
   away_q4_score: string
 }
-type StatsDraft = Omit<PlayerStats, 'game_id' | 'player_id' | 'minutes'> & { minutes: string }
+type NumericStatKey = 'plus_minus' | 'points' | 'offensive_rebounds' | 'defensive_rebounds' | 'two_points_made' | 'two_points_attempted' | 'three_points_made' | 'three_points_attempted' | 'free_throws_made' | 'free_throws_attempted' | 'assists' | 'steals' | 'blocks' | 'turnovers' | 'fouls'
+type StatsDraft = Omit<PlayerStats, 'game_id' | 'player_id' | 'minutes' | NumericStatKey | 'minutes_seconds'> & { minutes: string; minutes_seconds: number | null } & Record<NumericStatKey, string>
 
 const blankGame: GameDraft = {
   round: '', game_date: '', home_team_id: '', away_team_id: '', venue: '',
@@ -79,10 +80,10 @@ const blankGame: GameDraft = {
   home_q3_score: '', away_q3_score: '', home_q4_score: '', away_q4_score: '',
 }
 const blankStats: StatsDraft = {
-  minutes: '00:00', minutes_seconds: 0, plus_minus: 0, points: 0, rebounds: null, offensive_rebounds: 0, defensive_rebounds: 0,
-  two_points_made: 0, two_points_attempted: 0, three_points_made: 0,
-  three_points_attempted: 0, free_throws_made: 0, free_throws_attempted: 0,
-  assists: 0, steals: 0, blocks: 0, turnovers: 0, fouls: 0,
+  minutes: '', minutes_seconds: null, plus_minus: '', points: '', rebounds: null, offensive_rebounds: '', defensive_rebounds: '',
+  two_points_made: '', two_points_attempted: '', three_points_made: '',
+  three_points_attempted: '', free_throws_made: '', free_throws_attempted: '',
+  assists: '', steals: '', blocks: '', turnovers: '', fouls: '',
 }
 
 function localDateTime(value: string) {
@@ -423,7 +424,7 @@ export default function ManagementPage() {
   function startStatsEdit(row: PlayerStats) {
     setPlayerId(row.player_id)
     setEditingStatsPlayerId(row.player_id)
-    setStatsDraft({ ...row, minutes: formatMinutes(playerMinutesSeconds(row)), minutes_seconds: playerMinutesSeconds(row), plus_minus: row.plus_minus ?? 0 })
+    setStatsDraft({ ...row, minutes: formatMinutes(playerMinutesSeconds(row)), minutes_seconds: playerMinutesSeconds(row), plus_minus: String(row.plus_minus ?? ''), points: String(row.points ?? ''), offensive_rebounds: String(row.offensive_rebounds ?? ''), defensive_rebounds: String(row.defensive_rebounds ?? ''), two_points_made: String(row.two_points_made ?? ''), two_points_attempted: String(row.two_points_attempted ?? ''), three_points_made: String(row.three_points_made ?? ''), three_points_attempted: String(row.three_points_attempted ?? ''), free_throws_made: String(row.free_throws_made ?? ''), free_throws_attempted: String(row.free_throws_attempted ?? ''), assists: String(row.assists ?? ''), steals: String(row.steals ?? ''), blocks: String(row.blocks ?? ''), turnovers: String(row.turnovers ?? ''), fouls: String(row.fouls ?? '') })
     setError('')
     setNotice('')
   }
@@ -452,7 +453,7 @@ export default function ManagementPage() {
     const record = {
       minutes: Number((minutesSeconds / 60).toFixed(1)),
       minutes_seconds: minutesSeconds,
-      plus_minus: Number(statsDraft.plus_minus) || 0,
+      plus_minus: numeric(statsDraft.plus_minus) ?? 0,
       points: pointsFromStats(statsDraft),
       rebounds: reboundsFromDraft(statsDraft),
       offensive_rebounds: Number(statsDraft.offensive_rebounds) || 0,
@@ -591,22 +592,22 @@ export default function ManagementPage() {
                 {!editingStatsPlayerId && !statsLoading && availablePlayers.length === 0 && <p className="mg-hint">Todos los jugadores activos ya tienen estadísticas en este partido. Edita una fila existente o elimina una antes de volver a añadirla.</p>}
                 <div className="mg-stat-fields">
                   <label>Minutos<input className="mg-minutes-input" type="text" inputMode="numeric" placeholder="12:43" pattern="\d{1,3}:[0-5]\d" value={statsDraft.minutes} onChange={(event) => setStatsDraft({ ...statsDraft, minutes: event.target.value })} aria-describedby="mg-minutes-hint" /><small id="mg-minutes-hint">Formato mm:ss</small></label>
-                  <div className="mg-derived-stat"><span>Puntos</span><strong>{pointsFromStats(statsDraft)}</strong><small>2 × T2 + 3 × T3 + TL; conserva dato previo si no hay tiros</small></div>
-                  <StatInput label="+/- en pista" value={statsDraft.plus_minus} min="-999" onChange={(value) => setStatsDraft({ ...statsDraft, plus_minus: value })} />
-                  <StatInput label="Rebotes ofensivos" value={statsDraft.offensive_rebounds} onChange={(value) => setStatsDraft({ ...statsDraft, offensive_rebounds: value })} />
-                  <StatInput label="Rebotes defensivos" value={statsDraft.defensive_rebounds} onChange={(value) => setStatsDraft({ ...statsDraft, defensive_rebounds: value })} />
-                  <div className="mg-derived-stat"><span>Rebotes totales</span><strong>{reboundsFromDraft(statsDraft)}</strong><small>Ofensivos + defensivos</small></div>
-                  <StatInput label="Asistencias" value={statsDraft.assists} onChange={(value) => setStatsDraft({ ...statsDraft, assists: value })} />
                   <StatInput label="T2 anotados" value={statsDraft.two_points_made} onChange={(value) => setStatsDraft({ ...statsDraft, two_points_made: value })} />
                   <StatInput label="T2 intentados" value={statsDraft.two_points_attempted} onChange={(value) => setStatsDraft({ ...statsDraft, two_points_attempted: value })} />
                   <StatInput label="T3 anotados" value={statsDraft.three_points_made} onChange={(value) => setStatsDraft({ ...statsDraft, three_points_made: value })} />
                   <StatInput label="T3 intentados" value={statsDraft.three_points_attempted} onChange={(value) => setStatsDraft({ ...statsDraft, three_points_attempted: value })} />
                   <StatInput label="TL anotados" value={statsDraft.free_throws_made} onChange={(value) => setStatsDraft({ ...statsDraft, free_throws_made: value })} />
                   <StatInput label="TL intentados" value={statsDraft.free_throws_attempted} onChange={(value) => setStatsDraft({ ...statsDraft, free_throws_attempted: value })} />
+                  <StatInput label="Rebotes ofensivos" value={statsDraft.offensive_rebounds} onChange={(value) => setStatsDraft({ ...statsDraft, offensive_rebounds: value })} />
+                  <StatInput label="Rebotes defensivos" value={statsDraft.defensive_rebounds} onChange={(value) => setStatsDraft({ ...statsDraft, defensive_rebounds: value })} />
+                  <StatInput label="Asistencias" value={statsDraft.assists} onChange={(value) => setStatsDraft({ ...statsDraft, assists: value })} />
                   <StatInput label="Robos" value={statsDraft.steals} onChange={(value) => setStatsDraft({ ...statsDraft, steals: value })} />
-                  <StatInput label="Tapones" value={statsDraft.blocks} onChange={(value) => setStatsDraft({ ...statsDraft, blocks: value })} />
                   <StatInput label="Pérdidas" value={statsDraft.turnovers} onChange={(value) => setStatsDraft({ ...statsDraft, turnovers: value })} />
+                  <StatInput label="Tapones" value={statsDraft.blocks} onChange={(value) => setStatsDraft({ ...statsDraft, blocks: value })} />
                   <StatInput label="Faltas" value={statsDraft.fouls} onChange={(value) => setStatsDraft({ ...statsDraft, fouls: value })} />
+                  <StatInput label="+/- en pista" value={statsDraft.plus_minus} min="-999" onChange={(value) => setStatsDraft({ ...statsDraft, plus_minus: value })} />
+                  <div className="mg-derived-stat"><span>Puntos</span><strong>{pointsFromStats(statsDraft)}</strong><small>2 × T2 + 3 × T3 + TL; conserva dato previo si no hay tiros</small></div>
+                  <div className="mg-derived-stat"><span>Rebotes totales</span><strong>{reboundsFromDraft(statsDraft)}</strong><small>Ofensivos + defensivos</small></div>
                 </div>
                 <button className="mg-button mg-button--primary" type="submit" disabled={busy || statsLoading || !playerId}>{busy ? 'Guardando…' : editingStatsPlayerId ? 'Guardar estadísticas' : 'Añadir estadísticas'}</button>
               </form>
@@ -621,8 +622,8 @@ export default function ManagementPage() {
   )
 }
 
-function StatInput({ label, value, onChange, step = '1', min = '0' }: { label: string; value: number | string; onChange: (value: number) => void; step?: string; min?: string }) {
-  return <label>{label}<input type="number" min={min} step={step} value={value} onChange={(event) => onChange(Number(event.target.value) || 0)} /></label>
+function StatInput({ label, value, onChange, step = '1', min = '0' }: { label: string; value: number | string; onChange: (value: string) => void; step?: string; min?: string }) {
+  return <label>{label}<input type="number" min={min} step={step} value={value} onChange={(event) => onChange(event.target.value)} /></label>
 }
 
 function ManagementShell({ children }: { children: ReactNode }) {
