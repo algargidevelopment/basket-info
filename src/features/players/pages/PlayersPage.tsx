@@ -269,7 +269,7 @@ export default function PlayersPage() {
                 </span>
                 <span className="player-card__stats">
                   <span><strong>{average(stats.points, stats.games)}</strong><small>PTS / PJ</small></span>
-                  <span><strong>{percent(stats.twoMade + stats.threeMade, stats.twoAttempted + stats.threeAttempted)}</strong><small>TC%</small></span>
+                  <span className="player-card__shooting-stat"><strong>{percent(stats.twoMade + stats.threeMade, stats.twoAttempted + stats.threeAttempted)}</strong><small>TC%</small><i className="player-card__shooting-track" aria-hidden="true"><i style={{ width: `${stats.twoAttempted + stats.threeAttempted ? Math.min(((stats.twoMade + stats.threeMade) / (stats.twoAttempted + stats.threeAttempted)) * 100, 100) : 0}%` }} /></i></span>
                   <span className="player-card__arrow" aria-hidden="true">↗</span>
                 </span>
               </button>
@@ -318,8 +318,9 @@ export default function PlayersPage() {
                 ].map(([label, made, attempts]) => {
                   const madeNumber = Number(made)
                   const attemptsNumber = Number(attempts)
-                  const rate = attemptsNumber ? madeNumber / attemptsNumber : 0
-                  return <div className="shooting-row" key={String(label)}><span>{label}</span><div className="shooting-row__track"><i style={{ width: `${Math.min(rate * 100, 100)}%` }} /></div><strong>{percent(madeNumber, attemptsNumber)}</strong><small>{madeNumber}/{attemptsNumber}</small></div>
+                  const rate = attemptsNumber > 0 ? Math.max(0, Math.min(madeNumber / attemptsNumber, 1)) : 0
+                  const ratePercent = rate * 100
+                  return <div className="shooting-row" key={String(label)}><span>{label}</span><div className="shooting-row__track" role="img" aria-label={`${label}: ${percent(madeNumber, attemptsNumber)}`} style={{ background: `linear-gradient(90deg, #f35b04 ${ratePercent}%, #eef0f2 ${ratePercent}%)` }} /><strong>{percent(madeNumber, attemptsNumber)}</strong><small>{madeNumber}/{attemptsNumber}</small></div>
                 })}
               </div>
               <div className="player-dialog__extras"><span>ROBOS <strong>{average(selectedTotals.steals, selectedTotals.games)}</strong></span><span>TAPONES <strong>{average(selectedTotals.blocks, selectedTotals.games)}</strong></span><span>PÉRDIDAS <strong>{average(selectedTotals.turnovers, selectedTotals.games)}</strong></span></div>

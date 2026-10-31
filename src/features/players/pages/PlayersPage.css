@@ -102,6 +102,8 @@
 .player-card__meta { margin-top: 0.3rem; color: #84909e; font-size: 0.69rem; }
 .player-card__stats { display: grid; grid-template-columns: 1fr 1fr auto; align-items: center; gap: 0.2rem; padding: 0.65rem 0.15rem 0.1rem; border-top: 1px solid #eff1f3; }
 .player-card__stats > span:not(.player-card__arrow) { display: flex; flex-direction: column; gap: 0.15rem; }
+.player-card__shooting-track { display: block; height: 0.22rem; overflow: hidden; margin-top: 0.18rem; border-radius: 99px; background: #eef0f2; }
+.player-card__shooting-track > i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #f7945d, var(--roster-orange)); transition: width 450ms cubic-bezier(.2,.8,.2,1); }
 .player-card__stats strong { color: var(--color-navy); font-family: var(--font-stats); font-size: 0.9rem; font-weight: 700; }
 .player-card__stats small { color: #a0a8b2; font-family: var(--font-stats); font-size: 0.52rem; font-weight: 700; letter-spacing: 0.08em; }
 .player-card__arrow { display: grid; width: 1.75rem; aspect-ratio: 1; place-items: center; border: 1px solid #e8ebee; border-radius: 50%; color: #7f8996; font-size: 0.8rem; transition: border-color 180ms ease, background 180ms ease, color 180ms ease, transform 180ms ease; }
@@ -144,8 +146,7 @@
 .player-dialog__shooting { margin-top: 1.7rem; }
 .shooting-row { display: grid; grid-template-columns: 7.5rem minmax(3rem, 1fr) 2.5rem 3rem; align-items: center; gap: 0.7rem; min-height: 2.4rem; border-bottom: 1px solid #f0f2f4; }
 .shooting-row > span { color: #586575; font-size: 0.72rem; }
-.shooting-row__track { height: 0.36rem; overflow: hidden; border-radius: 99px; background: #eef0f2; }
-.shooting-row__track i { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #f7945d, var(--roster-orange)); transition: width 450ms cubic-bezier(.2,.8,.2,1); }
+.shooting-row__track { display: block; width: 100%; height: 0.5rem; overflow: hidden; border: 1px solid #e6e9ec; border-radius: 99px; background-color: #eef0f2; transition: background 450ms cubic-bezier(.2,.8,.2,1); }
 .shooting-row > strong { color: var(--color-navy); font-family: var(--font-stats); font-size: 0.78rem; text-align: right; }
 .shooting-row > small { color: #a0a8b1; font-family: var(--font-stats); font-size: 0.63rem; text-align: right; }
 .player-dialog__extras { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.25rem; }
