@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { useCompetition } from '../../../lib/useCompetition'
+import { teamLogoFor, teamLogoNeedsDarkInk } from '../../teams/teamLogos'
 import './StandingsPage.css'
 
 const SEASON = '2026-27'
@@ -91,11 +92,14 @@ export default function StandingsPage() {
         {loading ? <div className="standings-state">Cargando clasificación…</div> : error ? <div className="standings-state standings-state--error" role="alert">{error}</div> : rows.length === 0 ? <div className="standings-state">No hay equipos asociados a {competition}. Revisa la relación de participantes de la competición.</div> : <div className="standings-table-scroll">
           <table className="standings-table">
             <thead><tr><th className="standings-table__rank">#</th><th className="standings-table__team">Equipo</th><th title="Partidos jugados">PJ</th><th title="Partidos ganados">V</th><th title="Partidos perdidos">D</th><th title="Porcentaje de victorias">%V</th><th title="Puntos a favor">PF</th><th title="Puntos en contra">PC</th><th title="Diferencial de puntos">+/-</th></tr></thead>
-            <tbody>{rows.map((row) => <tr className={row.team.id === valencia?.team.id ? 'is-valencia' : ''} key={row.team.id}>
-              <td className="standings-table__rank"><span>{row.position}</span></td>
-              <td className="standings-table__team"><div className="standings-team-mark">{row.team.logo_url ? <img src={row.team.logo_url} alt="" /> : initials(row.team.short_name || row.team.name)}</div><strong>{row.team.name}</strong>{row.team.id === valencia?.team.id }</td>
-              <td>{row.played}</td><td className="standings-table__wins">{row.wins}</td><td>{row.losses}</td><td>{percentage(row.wins, row.played)}</td><td>{row.pointsFor}</td><td>{row.pointsAgainst}</td><td className={row.pointsFor - row.pointsAgainst > 0 ? 'is-positive' : row.pointsFor - row.pointsAgainst < 0 ? 'is-negative' : ''}>{signed(row.pointsFor - row.pointsAgainst)}</td>
-            </tr>)}</tbody>
+            <tbody>{rows.map((row) => {
+              const logo = teamLogoFor(row.team.name, competition) ?? row.team.logo_url
+              return <tr className={row.team.id === valencia?.team.id ? 'is-valencia' : ''} key={row.team.id}>
+                <td className="standings-table__rank"><span>{row.position}</span></td>
+                <td className="standings-table__team"><div className="standings-team-mark">{logo ? <img className={teamLogoNeedsDarkInk(row.team.name, competition) ? 'team-logo--dark-ink' : undefined} src={logo} alt="" /> : initials(row.team.short_name || row.team.name)}</div><strong>{row.team.name}</strong></td>
+                <td>{row.played}</td><td className="standings-table__wins">{row.wins}</td><td>{row.losses}</td><td>{percentage(row.wins, row.played)}</td><td>{row.pointsFor}</td><td>{row.pointsAgainst}</td><td className={row.pointsFor - row.pointsAgainst > 0 ? 'is-positive' : row.pointsFor - row.pointsAgainst < 0 ? 'is-negative' : ''}>{signed(row.pointsFor - row.pointsAgainst)}</td>
+              </tr>
+            })}</tbody>
           </table>
         </div>}
         {!loading && !error && rows.length > 0 && <footer className="standings-card__footer"><span><i className="standings-football-dot" />Valencia Basket</span><span>PJ: partidos jugados · V: victorias · D: derrotas</span><span>PF: puntos a favor · PC: puntos en contra</span></footer>}

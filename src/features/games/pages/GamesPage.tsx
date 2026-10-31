@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { supabase } from '../../../lib/supabase'
 import { useCompetition } from '../../../lib/useCompetition'
+import { teamLogoFor, teamLogoNeedsDarkInk } from '../../teams/teamLogos'
 import './GamesPage.css'
 
 const SEASON = '2026-27'
@@ -32,6 +33,28 @@ function addToCalendar(game: Game, home: string, away: string, competition: stri
   const stamp = (date: Date) => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
   const params = new URLSearchParams({ action: 'TEMPLATE', text: `${home} - ${away}`, dates: `${stamp(start)}/${stamp(new Date(start.getTime() + 2 * 60 * 60 * 1000))}`, location: game.venue ?? '', details: `${competition}${game.round ? ` · ${game.round}` : ''}` })
   window.open(`https://calendar.google.com/calendar/render?${params.toString()}`, '_blank', 'noopener,noreferrer')
+}
+function escapeCalendarText(value: string) { return value.replace(/\\/g, '\\\\').replace(/\r?\n/g, '\\n').replace(/,/g, '\\,').replace(/;/g, '\\;') }
+function downloadUpcomingCalendar(games: Game[], teamById: Map<string, Team>, competition: string) {
+  const stamp = (date: Date) => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '')
+  const now = stamp(new Date())
+  const events = games.map((game) => {
+    const home = teamById.get(game.home_team_id)?.name ?? 'Equipo local'
+    const away = teamById.get(game.away_team_id)?.name ?? 'Equipo visitante'
+    const start = new Date(game.game_date)
+    const end = new Date(start.getTime() + 2 * 60 * 60 * 1000)
+    const details = `${competition}${game.round ? ` · ${game.round}` : ''}`
+    return ['BEGIN:VEVENT', `UID:${game.id}@basket-info`, `DTSTAMP:${now}`, `DTSTART:${stamp(start)}`, `DTEND:${stamp(end)}`, `SUMMARY:${escapeCalendarText(`${home} - ${away}`)}`, `DESCRIPTION:${escapeCalendarText(details)}`, `LOCATION:${escapeCalendarText(game.venue ?? '')}`, 'END:VEVENT'].join('\r\n')
+  })
+  const calendar = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Basket Info//Calendario//ES', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', ...events, 'END:VCALENDAR'].join('\r\n')
+  const url = URL.createObjectURL(new Blob([calendar], { type: 'text/calendar;charset=utf-8' }))
+  const link = document.createElement('a')
+  link.href = url
+  link.download = `valencia-basket-${competition.toLowerCase()}-proximos.ics`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  window.setTimeout(() => URL.revokeObjectURL(url), 1000)
 }
 
 export default function GamesPage() {
@@ -79,6 +102,7 @@ export default function GamesPage() {
   const teamById = useMemo(() => new Map(teams.map((team) => [team.id, team])), [teams])
   const valencia = teams.find((team) => team.name.toLowerCase() === 'valencia basket')
   const valenciaGames = useMemo(() => valencia ? games.filter((game) => game.home_team_id === valencia.id || game.away_team_id === valencia.id) : [], [games, valencia])
+  const upcomingGames = useMemo(() => valenciaGames.filter((game) => game.status === 'scheduled' && new Date(game.game_date).getTime() >= Date.now()), [valenciaGames])
   const nextGame = valenciaGames.find((game) => game.status === 'live') ?? valenciaGames.find((game) => game.status === 'scheduled' && new Date(game.game_date).getTime() >= Date.now())
   const filteredGames = valenciaGames
     .filter((game) => filter === 'all' || (filter === 'finished' ? game.status === 'finished' : game.status !== 'finished'))
@@ -116,12 +140,17 @@ export default function GamesPage() {
 
     <section className="games-list" aria-label="Calendario de Valencia Basket">
       <div className="games-list__heading"><div><span className="games-eyebrow">CALENDARIO Y RESULTADOS</span><h2>Todos los encuentros</h2></div>
-        <div className="games-filters" aria-label="Filtrar partidos">
-          {([['all', 'Todos'], ['upcoming', 'Próximos'], ['finished', 'Finalizados']] as const).map(([value, label]) => <button type="button" key={value} className={filter === value ? 'is-active' : ''} onClick={() => setFilter(value)}>{label}</button>)}
+        <div className="games-list__actions">
+          {!loading && !error && upcomingGames.length > 0 && <button className="games-calendar-all" type="button" title="Descarga un archivo .ics para importar la temporada en tu calendario" onClick={() => downloadUpcomingCalendar(upcomingGames, teamById, competition)}><span className="games-calendar-all__icon" aria-hidden="true">＋</span><span className="games-calendar-all__copy"><strong>Añadir temporada completa</strong><small>{upcomingGames.length} partidos · archivo .ics</small></span><span className="games-calendar-all__arrow" aria-hidden="true">→</span></button>}
+          <div className="games-filters" aria-label="Filtrar partidos">
+            {([['all', 'Todos'], ['upcoming', 'Próximos'], ['finished', 'Finalizados']] as const).map(([value, label]) => <button type="button" key={value} className={filter === value ? 'is-active' : ''} onClick={() => setFilter(value)}>{label}</button>)}
+          </div>
         </div>
       </div>
       {loading ? <div className="games-state">Cargando calendario…</div> : error ? <div className="games-state games-state--error" role="alert">{error}</div> : !valencia ? <div className="games-state">No se encontró Valencia Basket en los equipos de {competition}.</div> : !filteredGames.length ? <div className="games-state">No hay partidos {filter === 'finished' ? 'finalizados' : filter === 'upcoming' ? 'próximos' : ''} cargados.</div> : <div className="games-list__items">{filteredGames.map((game) => {
         const home = teamById.get(game.home_team_id); const away = teamById.get(game.away_team_id); const isHome = game.home_team_id === valencia.id
+        const homeLogo = home ? teamLogoFor(home.name, competition) ?? home.logo_url : undefined
+        const awayLogo = away ? teamLogoFor(away.name, competition) ?? away.logo_url : undefined
         const date = dateParts(game.game_date); const rows = statsByGame.get(game.id) ?? []
         const leaders = [...rows].sort((a, b) => b.points - a.points).slice(0, 3)
         const quarters = [1, 2, 3, 4].map((quarter) => ({ quarter, home: game[`home_q${quarter}_score` as keyof Game], away: game[`away_q${quarter}_score` as keyof Game] }))
@@ -131,9 +160,9 @@ export default function GamesPage() {
           <div className="game-card__main">
             <div className="game-card__meta"><span className={`game-status game-status--${game.status}`}>{gameStatus(game.status)}</span><span>{date.full} · {date.time}</span><span>{isHome ? 'Local' : 'Visitante'}</span></div>
             <div className="game-card__matchup">
-              <div className={`game-team${home?.id === valencia.id ? ' game-team--valencia' : ''}`}><span className="game-team__mark">{home?.logo_url ? <img src={home.logo_url} alt="" /> : initials(home?.short_name || home?.name || 'L')}</span><strong>{home?.name ?? 'Equipo local'}</strong><small>Local</small></div>
+              <div className={`game-team${home?.id === valencia.id ? ' game-team--valencia' : ''}`}><span className="game-team__mark">{homeLogo ? <img className={home && teamLogoNeedsDarkInk(home.name, competition) ? 'team-logo--dark-ink' : undefined} src={homeLogo} alt="" /> : initials(home?.short_name || home?.name || 'L')}</span><strong>{home?.name ?? 'Equipo local'}</strong><small>Local</small></div>
               <div className="game-score">{game.status === 'scheduled' ? <><strong>VS</strong><span>—</span></> : <><strong>{game.home_score ?? '—'}</strong><span>:</span><strong>{game.away_score ?? '—'}</strong></>}</div>
-              <div className={`game-team game-team--away${away?.id === valencia.id ? ' game-team--valencia' : ''}`}><span className="game-team__mark">{away?.logo_url ? <img src={away.logo_url} alt="" /> : initials(away?.short_name || away?.name || 'V')}</span><strong>{away?.name ?? 'Equipo visitante'}</strong><small>Visitante</small></div>
+              <div className={`game-team game-team--away${away?.id === valencia.id ? ' game-team--valencia' : ''}`}><span className="game-team__mark">{awayLogo ? <img className={away && teamLogoNeedsDarkInk(away.name, competition) ? 'team-logo--dark-ink' : undefined} src={awayLogo} alt="" /> : initials(away?.short_name || away?.name || 'V')}</span><strong>{away?.name ?? 'Equipo visitante'}</strong><small>Visitante</small></div>
             </div>
             <div className="game-card__details"><span>⌖ {game.venue || 'Sede pendiente'}</span><span>{competition}{game.round ? ` · ${game.round}` : ''}</span></div>
             {game.status === 'finished' && quarters.some((part) => part.home !== null || part.away !== null) && <div className="game-periods" aria-label="Puntos por cuarto"><b>Parcial</b>{quarters.map((part) => <span key={part.quarter}>Q{part.quarter}<strong>{part.home ?? '—'}–{part.away ?? '—'}</strong></span>)}<span>Final<strong>{game.home_score ?? '—'}–{game.away_score ?? '—'}</strong></span></div>}
