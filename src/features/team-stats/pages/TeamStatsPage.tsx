@@ -12,6 +12,8 @@ type Team = { id: string; name: string; short_name: string | null; logo_url: str
 type Box = Omit<TeamGameStats, 'game_id'> & { points: number; pointsAgainst: number; rebounds: number | null; playerRows: number; hasStats: boolean; game: Game }
 type Metric = keyof Omit<TeamGameStats, 'game_id'>
 const statFields: Metric[] = ['two_points_made', 'two_points_attempted', 'three_points_made', 'three_points_attempted', 'free_throws_made', 'free_throws_attempted', 'offensive_rebounds', 'defensive_rebounds', 'assists', 'steals', 'blocks', 'turnovers', 'fouls']
+const TEAM_STATS_SELECT = 'game_id,two_points_made,two_points_attempted,three_points_made,three_points_attempted,free_throws_made,free_throws_attempted,offensive_rebounds,defensive_rebounds,assists,steals,blocks,turnovers,fouls'
+const PLAYER_STATS_SELECT = 'game_id,points,two_points_made,two_points_attempted,three_points_made,three_points_attempted,free_throws_made,free_throws_attempted,offensive_rebounds,defensive_rebounds,rebounds,assists,steals,blocks,turnovers,fouls'
 
 const fmt = new Intl.NumberFormat('es-ES', { maximumFractionDigits: 1 })
 function average(value: number, games: number) { return games ? fmt.format(value / games) : '—' }
@@ -51,8 +53,8 @@ export default function TeamStatsPage() {
       let teamStats: TeamGameStats[] = []; let playerStats: PlayerGameStats[] = []
       if (ids.length) {
         const [teamStatsResult, playerStatsResult] = await Promise.all([
-          supabase!.from('game_team_stats').select(`game_id,${statFields.join(',')}`).in('game_id', ids),
-          supabase!.from('game_player_stats').select(`game_id,${['points', ...statFields, 'rebounds'].join(',')}`).in('game_id', ids),
+          supabase!.from('game_team_stats').select(TEAM_STATS_SELECT).in('game_id', ids),
+          supabase!.from('game_player_stats').select(PLAYER_STATS_SELECT).in('game_id', ids),
         ])
         if (teamStatsResult.error || playerStatsResult.error) { if (!cancelled) { setError(teamStatsResult.error?.message ?? playerStatsResult.error?.message ?? 'No se pudieron cargar las estadísticas.'); setLoading(false) }; return }
         teamStats = (teamStatsResult.data ?? []) as TeamGameStats[]
